@@ -30,6 +30,22 @@ Use it for architecture trade-offs, refactor-vs-patch decisions, security/perf b
 product strategy, pricing-vs-trust, and any plan awaiting sign-off. Do not use it for factual Q&A,
 one-line fixes, or mechanical execution already decided.
 
+## What it looks like
+
+[`examples/case-install-sync.md`](examples/case-install-sync.md) is a transcript-level walkthrough of one
+real decision (keep copied skill installs, or link them to one source): two blind openings that disagreed,
+a Round 2 in which **both** sides moved, two premises the host proved false by actually running commands,
+and the five-part verdict. The surviving answer was neither side's opening proposal — that is the point.
+
+A taste of Round 2, verbatim:
+
+> **A:** 对手最强的论点是：A 会让未提交的工作副本即时影响三个宿主；且把 `HOSTS.local.md` 放进仓库会触发
+> 隐私检查……`rglob` 检查和隐私文件问题是新证据，足以动摇我原先的 A。
+>
+> **B:** A′，即链接到专用的发布 worktree（`git worktree add` 检出发布 tag），不链接开发副本，这样 P1 就消失了。
+
+Transcripts stay in the author's working language; the protocol does not require English.
+
 ## Install
 
 The skill is a directory with `SKILL.md` plus `references/`. Copy
@@ -46,6 +62,20 @@ The skill is a directory with `SKILL.md` plus `references/`. Copy
 git clone https://github.com/superj0107/dual-flagship-debate.git
 cp -r dual-flagship-debate/skills/dual-flagship-debate ~/.claude/skills/
 ```
+
+Or through the ecosystem CLI, which drops the skill in `.agents/skills` and links it into each agent you
+name (verified end to end: it reports `Found 1 skill`, then creates a junction under `~/.claude/skills`):
+
+```bash
+npx skills add superj0107/dual-flagship-debate -g -y -a claude-code
+npx skills add superj0107/dual-flagship-debate -g -y -a codex -a cursor -a windsurf
+npx skills add superj0107/dual-flagship-debate -g -y -a '*'     # every agent it detects
+```
+
+Agent names come from that CLI's own list — `claude-code`, `codex`, `cursor`, `gemini-cli`,
+`github-copilot`, `cline`, `roo`, `opencode`, `windsurf`, `zed`, `warp`, `goose`, `junie`, `kiro-cli`,
+`qwen-code`, and dozens more; run it once with a wrong name to see the current set. Note `claude-code`,
+not `claude`.
 
 Do **not** edit the installed `SKILL.md` if your host tracks skill hashes; put local defaults in
 `AGENTS.md` / `CLAUDE.md` instead (see [Pinning a default pair](#pinning-a-default-pair)).

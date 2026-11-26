@@ -8,6 +8,28 @@ concrete recipe.
 Legend: **native** = host loads `SKILL.md` itself · **rules** = paste the trigger block into the
 host's instruction file · **cli** = drive two vendor CLIs from a shell (works everywhere).
 
+## Fastest path: the ecosystem CLI
+
+The skills CLI already knows most of the agents below, and installs into `.agents/skills` followed by a
+link per agent — which is the single-source-of-truth layout this repository recommends:
+
+```bash
+npx skills add superj0107/dual-flagship-debate -g -y -a claude-code
+npx skills add superj0107/dual-flagship-debate -g -y -a codex -a cursor -a windsurf -a gemini-cli
+npx skills add superj0107/dual-flagship-debate -g -y -a '*'      # every agent it detects
+npx skills add superj0107/dual-flagship-debate -l                # list what the repo offers, install nothing
+```
+
+If a name is rejected it prints the current full agent list (verified, ~80 names: `claude-code`, `codex`,
+`cursor`, `gemini-cli`, `github-copilot`, `cline`, `roo`, `opencode`, `windsurf`, `zed`, `warp`, `goose`,
+`junie`, `kiro-cli`, `qwen-code`, `openhands`, `continue`, `amp`, `trae`, `droid`, `crush`, `kilo`,
+`openclaw`, `universal`, …). Two caveats:
+
+- the flag is `claude-code`, not `claude`;
+- installing is not adapting. The per-host pages below still matter, because **read-only enforcement and
+  the two-debater dispatch are not part of any install format** — the host has to be told how to run the
+  rounds.
+
 | Host | How it picks up the protocol | Isolated read-only subagents | Read-only enforcement | Doc |
 |---|---|---|---|---|
 | **Claude Code** | native (skill root) | yes (Task/subagents) | `--permission-mode plan`, or restrict `--allowedTools` | [claude-code](claude-code/HOSTS.md) |

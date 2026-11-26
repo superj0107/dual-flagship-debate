@@ -62,6 +62,7 @@ REQUIRED_FILES = [
     "LICENSE",
     "CHANGELOG.md",
     "examples/topic-template.md",
+    "examples/case-install-sync.md",
     "hosts/README.md",
     "hosts/dsh/HOSTS.md",
     "hosts/codex/HOSTS.md",

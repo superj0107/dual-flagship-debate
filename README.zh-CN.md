@@ -19,6 +19,21 @@
 **适用**：架构与重构取舍、安全/性能边界、数据口径、产品策略、定价 vs 信任、UI 方向、待拍板方案的 Sign-off。
 **不适用**：简单事实问答、单文件琐碎修复、已经拍完的机械执行。
 
+## 它跑起来是什么样
+
+[`examples/case-install-sync.md`](examples/case-install-sync.md) 是一个真实决策的完整实录（三处技能安装
+要复制副本还是链接到单一真源）：两轮盲发双方结论相反，Round 2 **两边都动了**，主控亲手跑命令证伪了两条
+前提，最后是五栏裁决。活下来的答案不是任何一方开局的提案——这正是重点。
+
+Round 2 原文摘录：
+
+> **A：** 对手最强的论点是：A 会让未提交的工作副本即时影响三个宿主；且把 `HOSTS.local.md` 放进仓库会触发
+> 隐私检查……`rglob` 检查和隐私文件问题是新证据，足以动摇我原先的 A。
+>
+> **B：** A′，即链接到专用的发布 worktree（`git worktree add` 检出发布 tag），不链接开发副本，这样 P1 就消失了。
+
+实录保持中文，协议本身不要求任何语言。
+
 ## 安装
 
 技能就是一个目录：`SKILL.md` + `references/`。把 `skills/dual-flagship-debate/` 整个复制到宿主的技能根：
@@ -35,7 +50,20 @@ git clone https://github.com/superj0107/dual-flagship-debate.git
 cp -r dual-flagship-debate/skills/dual-flagship-debate ~/.claude/skills/
 ```
 
-若你的宿主会记录技能哈希，**不要就地改已安装的 `SKILL.md`**，把本机默认值写进 `AGENTS.md` / `CLAUDE.md`（见下）。
+或者用生态 CLI：它会把技能装到 `.agents/skills`，再用链接挂进你点名的每个 agent（已实测：先报
+`Found 1 skill`，再在 `~/.claude/skills` 下建 junction）：
+
+```bash
+npx skills add superj0107/dual-flagship-debate -g -y -a claude-code
+npx skills add superj0107/dual-flagship-debate -g -y -a codex -a cursor -a windsurf
+npx skills add superj0107/dual-flagship-debate -g -y -a '*'     # 它检测到的所有 agent
+```
+
+agent 名字取自那个 CLI 自己的清单：`claude-code`、`codex`、`cursor`、`gemini-cli`、`github-copilot`、
+`cline`、`roo`、`opencode`、`windsurf`、`zed`、`warp`、`goose`、`junie`、`kiro-cli`、`qwen-code` 等等，
+还有几十个；写错一个名字它会打印当前全量清单。注意是 `claude-code` 不是 `claude`。
+
+若你的宿主会记录技能哈希，**不要就地改已安装的 `SKILL.md`**，把本机默认值写进 `AGENTS.md` / `CLAUDE.md`。
 
 ## 选模：三级门禁
 

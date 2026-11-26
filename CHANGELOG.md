@@ -3,6 +3,27 @@
 All notable changes to this project. Format loosely follows [Keep a Changelog](https://keepachangelog.com/);
 versions use [Semantic Versioning](https://semver.org/).
 
+## [1.1.0] — 2026-11-26
+
+### Added
+
+- `examples/case-install-sync.md`: a full worked case — one real decision, two rounds, both debaters
+  changing position, four host-side fact-checks, five-part verdict.
+- README "What it looks like" section quoting Round 2 verbatim, in both languages.
+- Ecosystem install path: `npx skills add superj0107/dual-flagship-debate -g -y -a <agent>`, verified
+  end to end (the CLI reports `Found 1 skill`, installs to `.agents/skills`, then links into the named
+  agents), with the current agent-name list documented in both READMEs and `hosts/README.md`.
+
+### Verified
+
+- Directory junctions (`mklink /J`) need no elevation on the tested machine, and all three hosts follow
+  them when reading `SKILL.md`: Claude Code lists the skill in the init `slash_commands`, Codex reports
+  it present, and Node (the runtime under dsh/Codex) resolves `fs.statSync`/`realpathSync` through the
+  link.
+- `mklink /D` (directory symlink) also succeeded without elevation on that machine — the "symlinks need
+  admin" premise did not hold there.
+- `validate_privacy()` does reject host-specific notes placed inside the repository (absolute home
+  paths), which is why such notes stay outside it.
 ## [1.0.0] — 2026-11-26
 
 First public release.
