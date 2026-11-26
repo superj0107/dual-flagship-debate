@@ -45,19 +45,37 @@ cp -r dual-flagship-debate/skills/dual-flagship-debate ~/.claude/skills/
 
 型号会漂移：**永远先看宿主实时目录**，别照抄文档里带日期的示例。
 
-## 宿主派发
+## 适配的宿主
 
-协议用宿主中立的原语写成，三种派发范式（有状态多线程 / 无状态子 Agent / CLI 一次性）见 reference。具体到本机怎么发，见 [`hosts/`](hosts)：
+协议本身宿主中立；每个宿主不同的只有三件事：怎么加载协议、有没有隔离只读子会话、只读怎么强制。
+完整清单（Claude Code、Codex CLI、Gemini CLI、Cursor、GitHub Copilot、Cline / Roo Code、opencode、
+Aider、Windsurf、Zed、JetBrains，以及任何带 CLI 的宿主）见 [`hosts/README.md`](hosts/README.md)。
 
-- [`hosts/dsh/HOSTS.md`](hosts/dsh/HOSTS.md)：宿主内部没有旗舰子 Agent 时，改由主控驱动 CLI 进程
-- [`hosts/codex/HOSTS.md`](hosts/codex/HOSTS.md)：`codex exec -s read-only --ephemeral`
-- [`hosts/claude-code/HOSTS.md`](hosts/claude-code/HOSTS.md)：`claude -p` 或原生子 Agent
-- [`hosts/windows-cli/run-debate.ps1`](hosts/windows-cli/run-debate.ps1)：Round 1 并行盲发 → Round 2 无状态重放，带只读守卫
+| 宿主 | 配方 |
+|---|---|
+| Claude Code | [hosts/claude-code](hosts/claude-code/HOSTS.md) — 原生技能、Task 子会话、`--permission-mode plan` |
+| Codex CLI | [hosts/codex](hosts/codex/HOSTS.md) — `codex exec -s read-only --ephemeral` |
+| Gemini CLI | [hosts/gemini-cli](hosts/gemini-cli/HOSTS.md) — `GEMINI.md` + CLI 子进程 |
+| Cursor | [hosts/cursor](hosts/cursor/HOSTS.md) — `.cursor/rules`，两个聊天或 Background Agents |
+| GitHub Copilot（VS Code） | [hosts/copilot-vscode](hosts/copilot-vscode/HOSTS.md) — `.github/copilot-instructions.md` |
+| Cline / Roo Code | [hosts/cline-roo](hosts/cline-roo/HOSTS.md) — `.clinerules` / `.roo/rules`，关自动批准 |
+| opencode / Aider / Windsurf / Zed / JetBrains | [hosts/opencode-aider](hosts/opencode-aider/HOSTS.md) — `AGENTS.md`、`CONVENTIONS.md`、`.windsurfrules` |
+| dsh（DeepSeek Harness） | [hosts/dsh](hosts/dsh/HOSTS.md) — 无旗舰子 Agent，改驱动 CLI |
+| 任何 rules 型宿主 | [hosts/rules-snippets](hosts/rules-snippets/README.md) — 一份复制即用的规则块 |
+
+两个运行器，同一套两轮协议：
+
+- [`hosts/portable/run_debate.py`](hosts/portable/README.md) —— **任意两个 CLI、任意系统**，配置驱动
+- [`hosts/windows-cli/run-debate.ps1`](hosts/windows-cli/run-debate.ps1) —— 同一协议，原生 PowerShell
+
+```bash
+# 便携版（Linux / macOS / Windows 通用）
+python3 hosts/portable/run_debate.py --config debate.config.json --topic my-topic.md --rounds 2
+```
 
 ```powershell
-# 先把 examples/topic-template.md 填成你的议题文件，然后：
-powershell -ExecutionPolicy Bypass -File hosts\windows-cli\run-debate.ps1 `
-  -TopicFile .\my-topic.md -Mode cross-vendor -Rounds 2
+# Windows 原生
+powershell -ExecutionPolicy Bypass -File hosts\windows-cli\run-debate.ps1 -TopicFile .\my-topic.md -Rounds 2
 ```
 
 两条真正决定成败的实践规则：
@@ -79,7 +97,11 @@ powershell -ExecutionPolicy Bypass -File hosts\windows-cli\run-debate.ps1 `
 ```
 skills/dual-flagship-debate/SKILL.md      协议本体（宿主加载这个）
 skills/dual-flagship-debate/references/   选模规则 + 宿主任务范式
-hosts/                                    各宿主派发配方 + Windows 运行器
+hosts/README.md                           宿主矩阵：怎么加载、只读靠什么保证
+hosts/<host>/HOSTS.md                     每类宿主一份配方
+hosts/rules-snippets/                     rules 型宿主的复制即用规则块
+hosts/portable/run_debate.py              便携运行器：任意两个 CLI、任意系统
+hosts/windows-cli/run-debate.ps1          Windows 原生运行器
 examples/topic-template.md                Step 0 客观基线模板
 tests/validate_skill.py                   结构 / 契约 / 隐私检查
 ```

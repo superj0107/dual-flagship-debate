@@ -62,21 +62,38 @@ Pick two models in this order:
 
 Model IDs change constantly: inspect your host's **live** catalog, never copy a dated example.
 
-## Host dispatch
+## Supported hosts
 
-Three patterns are documented in the reference: stateful multi-thread hosts, stateless subagent
-hosts, and CLI-ephemeral hosts. Concrete recipes per host live in [`hosts/`](hosts):
+The protocol is host-neutral; what changes per host is how it is loaded, whether the host can spawn
+isolated read-only subagents, and how read-only gets enforced. The full matrix — Claude Code, Codex
+CLI, Gemini CLI, Cursor, GitHub Copilot (VS Code), Cline / Roo Code, opencode, Aider, Windsurf, Zed,
+JetBrains, plus anything with a CLI — is in [`hosts/README.md`](hosts/README.md).
 
-- [`hosts/dsh/HOSTS.md`](hosts/dsh/HOSTS.md) — orchestrator has no flagship subagents → drive the CLIs
-- [`hosts/codex/HOSTS.md`](hosts/codex/HOSTS.md) — `codex exec -s read-only --ephemeral`
-- [`hosts/claude-code/HOSTS.md`](hosts/claude-code/HOSTS.md) — `claude -p` or native subagents
-- [`hosts/windows-cli/run-debate.ps1`](hosts/windows-cli/run-debate.ps1) — Round 1 parallel blind
-  dispatch → Round 2 stateless replay, with a read-only guard
+| Host | Recipe |
+|---|---|
+| Claude Code | [hosts/claude-code](hosts/claude-code/HOSTS.md) — native skill, Task subagents, `--permission-mode plan` |
+| Codex CLI | [hosts/codex](hosts/codex/HOSTS.md) — `codex exec -s read-only --ephemeral` |
+| Gemini CLI | [hosts/gemini-cli](hosts/gemini-cli/HOSTS.md) — `GEMINI.md` + CLI runs |
+| Cursor | [hosts/cursor](hosts/cursor/HOSTS.md) — `.cursor/rules`, two chats or Background Agents |
+| GitHub Copilot (VS Code) | [hosts/copilot-vscode](hosts/copilot-vscode/HOSTS.md) — `.github/copilot-instructions.md` |
+| Cline / Roo Code | [hosts/cline-roo](hosts/cline-roo/HOSTS.md) — `.clinerules` / `.roo/rules`, approvals off |
+| opencode / Aider / Windsurf / Zed / JetBrains | [hosts/opencode-aider](hosts/opencode-aider/HOSTS.md) — `AGENTS.md`, `CONVENTIONS.md`, `.windsurfrules` |
+| dsh (DeepSeek Harness) | [hosts/dsh](hosts/dsh/HOSTS.md) — no flagship subagents → drive CLIs |
+| any rules-file host | [hosts/rules-snippets](hosts/rules-snippets/README.md) — one copy-paste block per host |
+
+Two runners implement the same two rounds:
+
+- [`hosts/portable/run_debate.py`](hosts/portable/README.md) — **any two CLIs, any OS**, config-driven
+- [`hosts/windows-cli/run-debate.ps1`](hosts/windows-cli/run-debate.ps1) — same protocol, native PowerShell
+
+```bash
+# portable (Linux / macOS / Windows)
+python3 hosts/portable/run_debate.py --config debate.config.json --topic my-topic.md --rounds 2
+```
 
 ```powershell
-# fill examples/topic-template.md first, then:
-powershell -ExecutionPolicy Bypass -File hosts\windows-cli\run-debate.ps1 `
-  -TopicFile .\my-topic.md -Mode cross-vendor -Rounds 2
+# native Windows
+powershell -ExecutionPolicy Bypass -File hosts\windows-cli\run-debate.ps1 -TopicFile .\my-topic.md -Rounds 2
 ```
 
 Two rules that actually matter in practice:
@@ -101,7 +118,11 @@ Add to your `AGENTS.md` / `CLAUDE.md` (no skill files touched):
 ```
 skills/dual-flagship-debate/SKILL.md      the protocol (load this)
 skills/dual-flagship-debate/references/   model pairing + host patterns
-hosts/                                    per-host dispatch recipes + Windows runner
+hosts/README.md                           host matrix: what loads it, what is read-only
+hosts/<host>/HOSTS.md                     one recipe per host family
+hosts/rules-snippets/                     copy-paste rule block for rules-file hosts
+hosts/portable/run_debate.py              portable runner: any two CLIs, any OS
+hosts/windows-cli/run-debate.ps1          Windows-native runner
 examples/topic-template.md                Step 0 baseline template
 tests/validate_skill.py                   structure / contract / privacy checks
 ```

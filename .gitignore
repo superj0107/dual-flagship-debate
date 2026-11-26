@@ -18,3 +18,7 @@ out-smoke/
 *.out.md
 *.log.txt
 WORKSPACE-DIFF-WARNING.txt
+RUN-META.json
+
+# Local runner config (may contain absolute paths or account-specific commands)
+debate.config.json
