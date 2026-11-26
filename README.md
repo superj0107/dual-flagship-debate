@@ -3,6 +3,7 @@
 [简体中文](README.zh-CN.md)
 
 [![Validate Skill](https://github.com/superj0107/dual-flagship-debate/actions/workflows/validate.yml/badge.svg)](https://github.com/superj0107/dual-flagship-debate/actions/workflows/validate.yml)
+[![Release](https://img.shields.io/github/v/release/superj0107/dual-flagship-debate?color=blue)](https://github.com/superj0107/dual-flagship-debate/releases)
 
 A **two-flagship adversarial debate Agent Skill** (`SKILL.md`). Instead of letting one LLM agree with
 a draft or settle on lukewarm consensus, the active host agent runs up to two isolated read-only

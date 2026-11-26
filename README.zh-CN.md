@@ -3,6 +3,7 @@
 [English](README.md)
 
 [![Validate Skill](https://github.com/superj0107/dual-flagship-debate/actions/workflows/validate.yml/badge.svg)](https://github.com/superj0107/dual-flagship-debate/actions/workflows/validate.yml)
+[![Release](https://img.shields.io/github/v/release/superj0107/dual-flagship-debate?color=blue)](https://github.com/superj0107/dual-flagship-debate/releases)
 
 一个**双旗舰对抗辩论**的 Agent Skill（`SKILL.md`）。不让单个模型去附和已有草稿、也不让它和稀泥出一个"综合都对"的中间结论：由当前对话的主控 Agent 主持，调度两款**同档顶配旗舰模型**在完全隔离的只读会话中打最多两轮，原文无损交叉转交，主控自己做事实核验，最后给出五栏决策简报。
 

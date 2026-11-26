@@ -60,6 +60,7 @@ REQUIRED_FILES = [
     "README.md",
     "README.zh-CN.md",
     "LICENSE",
+    "CHANGELOG.md",
     "examples/topic-template.md",
     "hosts/README.md",
     "hosts/dsh/HOSTS.md",
