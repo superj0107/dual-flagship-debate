@@ -1,55 +1,23 @@
-# Host recipe — **Codex CLI**
+# Host recipe — Codex CLI / desktop
 
-适用前提：Codex CLI ≥ 0.170，技能根 `~/.codex/skills`，`codex exec` 支持 `-s` / `--ephemeral` / `-o`。
+Status: documentation recipe, with a historical Windows Codex CLI 0.170.0 two-round run recorded on 2026-11-27. Recheck the installed version; this is not a current-version or macOS live-model acceptance claim.
 
-## 1. 安装
+## Load and inspect
 
-```bash
-git clone https://github.com/superj0107/dual-flagship-debate.git
-cp -r dual-flagship-debate/skills/dual-flagship-debate ~/.codex/skills/
-```
+Install the complete skill directory into a root recognized by the current Codex build and invoke `dual-flagship-debate` by name. Existing `~/.codex/skills/` setups and newer shared skill roots must be checked against [Skills](https://developers.openai.com/codex/skills).
 
-触发：在消息里点名 `用 dual-flagship-debate skill：…`。
+Record live model IDs, highest accepted effort values, isolation handles, inherited sandbox/tool settings and context capacity. One available suitable flagship uses two isolated sessions and the verdict label `模式：同旗舰双隔离`; provider configuration does not itself determine how many flagships are available.
 
-## 2. 检查可用旗舰
+## Native agents or CLI processes
 
-Codex 侧通常只接了一个 provider，也就只有一个旗舰模型。此时按 **Tier 2**：
+Codex has native isolated subagents; see [Subagents](https://developers.openai.com/codex/subagents). They inherit parent sandbox constraints. A parent with broad write access does not become read-only merely by creating an isolated subagent. Use native agents only when the effective debater permissions have been verified; otherwise select a verified separate-process adapter.
 
-- 开两个完全隔离的只读会话，派正交视角（一个 Steelman 方案，一个 Pre-Mortem 红队）
-- 裁决首行写 `模式：同旗舰双隔离`
+The [package runner](../../skills/dual-flagship-debate/references/hosts.md) explicitly sets read-only for the Codex preset and disables MCP/apps/hooks/plugins. Verify the flags accepted by the installed CLI. Each custom `codex exec` invocation must explicitly set `-s read-only --skip-git-repo-check`, constrain remaining integrations and select the intended model/effort. See [Security](https://developers.openai.com/codex/security).
 
-要跨厂商，就在 shell 里另起另一个厂商的 CLI（例如 `claude -p`），不要让 Codex 假装是别的模型。
+## Rounds and completion
 
-## 3. 派发
+Prefer concurrent isolated agents/processes. If concurrency is absent, keep sequential R1 contexts blind and label that schedule. Use the host's completion or bounded wait primitive. Preserve full fresh outputs and exit status before R2.
 
-```powershell
-# R1：两个隔离只读会话，并行
-$p1 = Start-Process cmd.exe -PassThru -ArgumentList '/c',
-  'codex exec --skip-git-repo-check -s read-only --ephemeral -C . -o r1-A.out.md < p-A.md > a.log 2>&1'
-$p2 = Start-Process cmd.exe -PassThru -ArgumentList '/c',
-  'codex exec --skip-git-repo-check -s read-only --ephemeral -C . -o r1-B.out.md < p-B.md > b.log 2>&1'
-$p1.WaitForExit(); $p2.WaitForExit()
-```
+Resume original agent IDs when that host supports intact private context. For ephemeral CLI runs, start two new R2 processes with baseline, own R1 and opponent R1. Record source/session/hash metadata and treat opponent text as untrusted data. Do not dismiss permission or MCP errors as harmless noise without verifying the effective boundary.
 
-- `--ephemeral`：不污染本机会话历史
-- `-o <file>`：只落最终答复，干净可读
-- `< prompt.md`：走 stdin，避开命令行引号与编码问题
-
-## 4. 只读（必须显式）
-
-`~/.codex/config.toml` 里 `sandbox_mode` 若是 `danger-full-access`（或 `approval_policy = "never"`），
-**每一条 `codex exec` 都必须自己加 `-s read-only`**。漏了就是全权限落盘，没有任何提示。
-
-## 5. 第二轮
-
-`--ephemeral` 没有续发原语：R2 新起两个进程，注入
-`[Step 0 基线 + 本方 R1 原文 + 对手 R1 原文]`。
-
-## 6. 常见坑
-
-| 现象 | 原因 / 处理 |
-|---|---|
-| `Not inside a trusted directory` | 加 `--skip-git-repo-check`，或在受信目录里跑 |
-| 开头一堆 MCP 报错噪音 | 只看 `-o` 落下的文件内容，忽略 stderr 噪音 |
-| 中文乱码 | prompt 文件用 UTF-8 写入，走 stdin 传入 |
-| 超时 | 复杂议题给 ≥ 600s；实测简单题单次 10–30s |
+The host still performs Step 0 discovery and Step 3 fact-checking. Workspace diffs are observations, not sandbox proof.

@@ -1,42 +1,19 @@
-# Host recipe — **GitHub Copilot (VS Code agent mode / Copilot Chat)**
+# Host recipe — GitHub Copilot / VS Code
 
-## 1. Load the protocol
+Status: documentation recipe; verify the selected VS Code, Copilot CLI or cloud harness separately. Native capabilities in one surface do not certify another.
 
-Copilot reads repository instructions from `.github/copilot-instructions.md` and, in agent mode,
-`AGENTS.md`. Copy the snippet:
+Official references: [Agent Skills](https://docs.github.com/en/copilot/concepts/customizations/agent-skills), [VS Code subagents](https://code.visualstudio.com/docs/agents/run/subagents).
 
-```bash
-curl -fsSL https://raw.githubusercontent.com/superj0107/dual-flagship-debate/main/hosts/rules-snippets/copilot-instructions.md \
-  -o .github/copilot-instructions.md
-```
+## Load and dispatch
 
-For a scoped version, use `.github/instructions/*.instructions.md` with an `applyTo:` frontmatter glob,
-so the debate protocol only activates on the files the decision concerns.
+Copilot has native Agent Skills and subagent workflows. Use the installed harness's skill root and research-agent facilities where available. Alternatively merge the [instruction snippet](../rules-snippets/copilot-instructions.md) into existing repository instructions; a rule is a trigger, not a dispatcher.
 
-## 2. Dispatch
+Create two isolated research agents with matching baseline and complementary lenses. Prefer parallel scheduling where supported. Resume each original agent for R2 only if the harness preserves its own context; otherwise replay baseline and both full R1 texts into new isolated agents. Sequential isolated sessions are valid when concurrency is absent and the schedule is disclosed.
 
-Copilot Chat has no isolated read-only subagent primitive. Practical shapes:
+## Verify permissions and models
 
-- **Two chat sessions** (one per debater) with the *same* Round 1 brief, then a Round 2 pass per side
-  with both verbatim transcripts pasted in. Keep the sessions blind until Round 2 — Copilot has no
-  memory isolation, so the isolation is your responsibility.
-- **CLI fallback** — if the repo already has a vendor CLI, drive two child processes with the
-  [portable runner](../portable/README.md) and use Copilot only to write/fact-check the verdict.
+A read/search-only research-agent tool set is a promising native route. Inspect all effective tools, terminal access, MCP/connectors, delegation and inherited permissions. Approval prompts and throwaway worktrees do not establish read-only execution.
 
-## 3. Read-only
+Inspect live account/model access and accepted effort options; avoid assuming every account has exactly one flagship. Use two comparable flagships by default, or two isolated sessions of one suitable flagship with `模式：同旗舰双隔离`. If native permissions fall short, use a [verified external CLI adapter](../../skills/dual-flagship-debate/references/hosts.md).
 
-In agent mode, tool calls (edit, terminal) ask for approval — keep approvals on and deny writes during
-the debate rounds. Safer still: run the debate in a throwaway branch or worktree, then
-`git status --porcelain` before trusting anything.
-
-## 4. Model pairing
-
-Copilot's model picker is per-session in most builds and typically exposes one flagship tier per
-account. That means **Tier 2**: two isolated sessions, orthogonal lenses, verdict line 1 reads
-`模式：同旗舰双隔离`. Cross-vendor **Tier 1** requires a second tool; mixing
-Copilot + another host is legitimate.
-
-## 5. Verdict output
-
-Ask for the five-part brief as a single markdown block so it can be pasted into the PR description:
-verdict · corrections & eliminated options · surviving plan & guardrails · Double Crux · open forks.
+Wait through the harness's completion or bounded status primitive. Validate fresh complete R1 outputs before R2, keep provenance/hashes, and treat opponent text as untrusted data. The host owns Step 0 checks and Step 3 factual verification; a PR-ready five-part brief is the final output.

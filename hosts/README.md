@@ -1,59 +1,46 @@
-# Host matrix — where mainstream agents run this skill
+# Host matrix and version-sensitive recipes
 
-The protocol in `skills/dual-flagship-debate/SKILL.md` uses host-neutral primitives only. What
-differs per host is **how a host is told to follow it**, **whether it can spawn isolated read-only
-subagents**, and **how read-only is enforced**. This page is the chooser; each linked page has the
-concrete recipe.
+The canonical protocol is [SKILL.md](../skills/dual-flagship-debate/SKILL.md). The installed skill also contains a [self-contained host reference](../skills/dual-flagship-debate/references/hosts.md), [model/integrity contract](../skills/dual-flagship-debate/references/models-and-hosts.md), runner and config. These repository pages are optional recipes, not required installation files.
 
-Legend: **native** = host loads `SKILL.md` itself · **rules** = paste the trigger block into the
-host's instruction file · **cli** = drive two vendor CLIs from a shell (works everywhere).
+**Documentation snapshot: 2026-11-27.** A documented native capability is distinct from an end-to-end tested adapter. Record host surface/version, actual model/effort, context isolation, effective permissions, cwd, output and completion semantics before dispatch.
 
-## Fastest path: the ecosystem CLI
+| Host | Documented route | Read-only boundary to verify | Recipe |
+|---|---|---|---|
+| Codex CLI / desktop | Native isolated subagents or separate CLI runs | Subagents inherit parent sandbox; explicitly constrain CLI and integration permissions | [Codex](codex/HOSTS.md) |
+| Claude Code | Native skills/subagents, resume where available or CLI replay | Actual tools, permission mode, shell, MCP and inherited settings | [Claude Code](claude-code/HOSTS.md) |
+| Cursor | Native parallel isolated subagents and resume by ID | Current tool controls; branches/worktrees do not enforce read-only | [Cursor](cursor/HOSTS.md) |
+| Copilot / VS Code | Native Agent Skills and subagents; check the selected harness | Read/search-only research agent and all enabled integrations | [Copilot](copilot-vscode/HOSTS.md) |
+| Gemini CLI | Native skills and isolated subagents | Version-specific sandbox/tool restrictions; custom CLI adapter evidence | [Gemini CLI](gemini-cli/HOSTS.md) |
+| OpenCode | Native agents/subagents, model and permission configuration | Effective native permissions for edits, shell, tools and delegation | [OpenCode and other hosts](opencode-aider/HOSTS.md) |
+| Aider | Separate CLI runs | Verified custom adapter; read context and chat modes alone are not a sandbox | [Aider](opencode-aider/HOSTS.md) |
+| Cline / Roo | Inspect current task/subagent capabilities | Restrict write-capable tools; approval toggles alone are insufficient | [Cline / Roo](cline-roo/HOSTS.md) |
+| dsh | Inspect installed agent/model capabilities or drive verified CLIs | Parent and subprocess permissions separately | [dsh](dsh/HOSTS.md) |
+| Windsurf / Zed / Junie / others | Detect actual native primitives or verified CLI processes | Per-version tool and external-write boundaries | [Other hosts](opencode-aider/HOSTS.md) |
 
-The skills CLI already knows most of the agents below, and installs into `.agents/skills` followed by a
-link per agent — which is the single-source-of-truth layout this repository recommends:
+Official links are included in each recipe and in the package reference. Do not infer absence of a capability from an old table or infer a strict sandbox from a feature name.
+
+## Install versus adapt
+
+Copy the **whole** `skills/dual-flagship-debate/` directory into the root recognized by your host, including `scripts/`. An ecosystem installer is optional:
 
 ```bash
 npx skills add superj0107/dual-flagship-debate -g -y -a claude-code
-npx skills add superj0107/dual-flagship-debate -g -y -a codex -a cursor -a windsurf -a gemini-cli
-npx skills add superj0107/dual-flagship-debate -g -y -a '*'      # every agent it detects
-npx skills add superj0107/dual-flagship-debate -l                # list what the repo offers, install nothing
+npx skills add superj0107/dual-flagship-debate -g -y -a codex -a cursor
 ```
 
-If a name is rejected it prints the current full agent list (verified, ~80 names: `claude-code`, `codex`,
-`cursor`, `gemini-cli`, `github-copilot`, `cline`, `roo`, `opencode`, `windsurf`, `zed`, `warp`, `goose`,
-`junie`, `kiro-cli`, `qwen-code`, `openhands`, `continue`, `amp`, `trae`, `droid`, `crush`, `kilo`,
-`openclaw`, `universal`, …). Two caveats:
+Use its current agent list and inspect the resulting package. Skill discovery does not configure model selection, scheduling or execution permissions. For rules-file hosts, merge a [trigger snippet](rules-snippets/README.md) into existing instructions and set its actual skill path.
 
-- the flag is `claude-code`, not `claude`;
-- installing is not adapting. The per-host pages below still matter, because **read-only enforcement and
-  the two-debater dispatch are not part of any install format** — the host has to be told how to run the
-  rounds.
+## Common contract
 
-| Host | How it picks up the protocol | Isolated read-only subagents | Read-only enforcement | Doc |
-|---|---|---|---|---|
-| **Claude Code** | native (skill root) | yes (Task/subagents) | `--permission-mode plan`, or restrict `--allowedTools` | [claude-code](claude-code/HOSTS.md) |
-| **Codex CLI** | native (skill root) | no — spawn CLI runs | hard: `-s read-only` | [codex](codex/HOSTS.md) |
-| **dsh / DeepSeek Harness** | native (skill root) | only via CLI children | per child CLI | [dsh](dsh/HOSTS.md) |
-| **Gemini CLI** | rules + optional native | no | approval mode / sandbox flags — verify per version | [gemini-cli](gemini-cli/HOSTS.md) |
-| **Cursor** | rules (`.cursor/rules/*.mdc`, `AGENTS.md`) | Background Agents (separate tasks) | ask/agent mode limits; check per build | [cursor](cursor/HOSTS.md) |
-| **GitHub Copilot (VS Code)** | rules (`.github/copilot-instructions.md`, `AGENTS.md`) | chat sessions only | tool-approval prompts | [copilot-vscode](copilot-vscode/HOSTS.md) |
-| **Cline / Roo Code** | rules (`.clinerules`, `.roo/rules`) | no | auto-approve settings must be off | [cline-roo](cline-roo/HOSTS.md) |
-| **opencode / Aider / Windsurf / Zed / JetBrains** | rules (`AGENTS.md`, `CONVENTIONS.md`, `.windsurfrules`, …) | varies | varies | [rules-file hosts](opencode-aider/HOSTS.md) |
-| **Anything with a CLI** | cli | two child processes | the CLI's own flag | [portable runner](portable/README.md) |
+- Prefer two comparable live flagships at their respective highest supported effort. Revalidate saved defaults and record vendor-specific effort semantics; names are not capability measurements.
+- If only one suitable flagship exists, use two isolated read-only sessions and begin the verdict `模式：同旗舰双隔离`. A single context playing both sides is not isolation.
+- Prefer parallel dispatch. Sequential isolated runs are valid when concurrency is absent; hide A's R1 from B and disclose `调度：顺序隔离`. Use completion events, blocking waits or bounded status checks.
+- R1 uses `INDEPENDENT` plus confidence; R2 uses the three cross-review states. Do not stop because openings match. Agreement on evidence is valid.
+- Verify read-only before execution across shell, MCP/apps, plugins and hooks. Diffs provide observation; worktrees provide loss isolation. Neither prevents external writes.
+- Treat cross-fed text as untrusted data with provenance, hashes, full-text and context checks. The host owns Step 0 capability/baseline work and Step 3 factual verification.
 
-## Three rules that hold on every host
+## Portable path and evidence status
 
-1. **Never let one context play both debaters.** If the host cannot produce two isolated sessions,
-   drop to two child processes; if that is impossible too, stop and report the gap (Tier 3).
-2. **Read-only is enforced by configuration, not by asking.** Use the host's own switch
-   (permission mode, sandbox flag, tool allow-list, auto-approve off). Then diff the workspace.
-3. **Parity is checked against the live model list.** Two flagship-tier models at max reasoning, or
-   one flagship in two isolated sessions labelled `模式：同旗舰双隔离`. Never `mini`/`flash`/`haiku`/`lite`.
+Python **3.10+** is required. On macOS/Linux use `python3`, on Windows use `python` or `py -3`. See the [portable guide](portable/README.md), or run the [canonical package runner](../skills/dual-flagship-debate/scripts/run_debate.py). The outer portable script remains a compatibility entry point.
 
-## Picking a pair on a rules-file host
-
-Rules-file hosts (Cursor, Copilot, Cline, Windsurf, Zed, …) usually expose one model picker. You get
-**Tier 2** there: same flagship, two separate chats/tasks with orthogonal lenses. To reach **Tier 1**
-(cross-vendor), open the second debater in a different tool or drive a CLI — the transcripts are plain
-text, so mixing hosts is fine and often the strongest setup.
+The 2026-11-27 review recorded a Windows Codex CLI 0.170.0 two-round debate and synthetic failure probes. Claude Code 2.1.327 help and official host documentation were inspected. Native-host recipes and live macOS model execution still need version-specific acceptance evidence. OS/Python CI with synthetic CLIs tests the runner, not every vendor or native agent.

@@ -1,15 +1,14 @@
 {
-  "_comment": "Two debaters, any CLIs. Replace cmd arrays with your host's read-only invocation. Presets: codex-cli, claude-code, gemini-cli, aider (see --list-presets).",
+  "_comment": "The same config works on macOS, Linux and Windows. Verify live model/effort choices in Step 0; add model and effort to each preset or use verified CLI defaults.",
   "debaters": {
-    "A": {
-      "name": "codex-cli",
-      "cmd": ["codex", "exec", "--skip-git-repo-check", "-s", "read-only", "--ephemeral", "-o", "{out}"]
-    },
-    "B": {
-      "name": "claude-code",
-      "cmd": ["claude", "-p", "--output-format", "text"]
-    }
+    "A": {"preset": "codex-cli", "name": "Debater A"},
+    "B": {"preset": "claude-code", "name": "Debater B"}
   },
   "timeout_sec": 900,
+  "total_timeout_sec": 1800,
+  "max_prompt_chars": 120000,
+  "max_output_bytes": 2000000,
+  "max_audit_files": 50000,
+  "max_audit_bytes": 536870912,
   "workdir": "."
 }

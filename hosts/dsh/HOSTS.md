@@ -1,50 +1,28 @@
-# Host recipe — **dsh** (DeepSeek Harness)
+# Host recipe — dsh (DeepSeek Harness)
 
-适用前提：dsh 里**没有**能指定任意旗舰模型的子 Agent 工具（只有一档轻量 provider），
-所以主持人不派子 Agent，而是用 shell 工具驱动两个 CLI 进程。这就是 reference 里的
-**Pattern C（CLI ephemeral）变体**。
+Status: version-sensitive recipe based on a historical local setup; detect the actual installed host's capabilities before choosing the route.
 
-## 1. 安装
+## Load and inspect
 
-```powershell
-Copy-Item -Recurse .\skills\dual-flagship-debate "$env:USERPROFILE\.agents\skills\"
+Install the complete `dual-flagship-debate` directory, including scripts and references, into the skill root recognized by that build (the historical setup used `~/.agents/skills/`). Confirm discovery, available models/effort values, isolated task primitives, permissions and continuation behavior.
+
+Do not generalize one local provider list into a claim that every dsh build lacks flagship subagents. If current native agents provide the required isolated read-only contexts and model settings, use them. Otherwise keep dsh as host and drive verified CLI processes.
+
+## Self-contained CLI route
+
+From the installed skill directory, with Python 3.10+:
+
+```bash
+# macOS / Linux; use python or py -3 on Windows
+python3 scripts/run_debate.py --config debate.config.json --topic topic.md --workdir /path/to/repo --rounds 2
 ```
 
-dsh 的技能根：`~/.agents/skills`（用户级）与 `<project>/.agents/skills`（项目级）。
-frontmatter 只需 `name` + `description`，本 skill 已符合；目录名与 `name` 保持一致。
+Copy/edit the [bundled config and runner](../../skills/dual-flagship-debate/references/hosts.md) after live capability checks. The repository's optional PowerShell entry point is another Windows route; installed skills need no outer repository files.
 
-重启或等技能目录热刷新后，用消息点名即可加载：
+## Execution contract
 
-```
-用 dual-flagship-debate 做一个方案：<决策问题>
-```
+Prefer two concurrent isolated sessions. On a sequential-only surface keep R1 blind and label `调度：顺序隔离`. Wait with the host's completion events, blocking waits or bounded status checks.
 
-## 2. 为什么不能让 dsh 自己派辩手
+Verify read-only separately for the host and each child CLI, including shell, MCP/apps, hooks/plugins and inherited settings. Git checks observe changes; worktrees isolate some local losses. Neither creates a permission boundary.
 
-若宿主内置的 provider 只有 `flash` / `mini` 级模型，或子 Agent 工具不允许指定 model，
-则按 skill 的 Tier 3 铁律**必须报缺口停止**——不要用轻量模型凑一场辩论，也不要在主控上下文里
-精分两方。正确做法：主控当主持人，起外部 CLI。
-
-## 3. 派发
-
-```powershell
-# 两个 CLI 各起一个隔离只读会话，并行
-powershell -ExecutionPolicy Bypass -File hosts\windows-cli\run-debate.ps1 `
-  -TopicFile .\topic.md -Mode cross-vendor -Rounds 2
-```
-
-- `-Mode cross-vendor`：辩手 A = Codex CLI，辩手 B = Claude Code（跨厂商）
-- `-Mode dual-codex` / `dual-claude`：同旗舰双隔离，裁决首行须标 `模式：同旗舰双隔离`
-- dsh 的 shell 工具是同步阻塞的：用后台任务（`run_in_background`）或脚本内 `Start-Process` 并行，
-  再等退出。**不要轮询**，等完成事件或阻塞等待。
-
-## 4. 只读
-
-- Codex：`-s read-only`（硬开关，必带）
-- Claude Code：无硬只读，需 `--permission-mode plan` 或限制工具白名单 + 事后 `git status` 复核
-- 主控在采信任何结论前，自己再看一次工作区 diff
-
-## 5. 事实核验归主持人
-
-辩手引用的文件路径、配置项、指标、外部规则，主持人都要用自己的只读工具验一遍；核不动的标
-「未核实前提」，验伪的当场纠偏并写进裁决第 ② 栏。
+Two suitable live flagships are the default. One flagship in isolated sessions uses `模式：同旗舰双隔离`; a missing native model can be supplied by another verified CLI rather than simulated in the host context. Preserve original R1 texts, source/session/hash metadata and context budget, then perform host Step 3 fact-checking before the verdict.

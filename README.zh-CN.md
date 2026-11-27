@@ -5,142 +5,115 @@
 [![Validate Skill](https://github.com/superj0107/dual-flagship-debate/actions/workflows/validate.yml/badge.svg)](https://github.com/superj0107/dual-flagship-debate/actions/workflows/validate.yml)
 [![Release](https://img.shields.io/github/v/release/superj0107/dual-flagship-debate?color=blue)](https://github.com/superj0107/dual-flagship-debate/releases)
 
-一个**双旗舰对抗辩论**的 Agent Skill（`SKILL.md`）。不让单个模型去附和已有草稿、也不让它和稀泥出一个"综合都对"的中间结论：由当前对话的主控 Agent 主持，调度两款**同档顶配旗舰模型**在完全隔离的只读会话中打最多两轮，原文无损交叉转交，主控自己做事实核验，最后给出五栏决策简报。
+用于复杂决策的宿主中立 Agent Skill。当前对话主控调度两位隔离、只读的旗舰辩手，第二轮交叉转交原始论证，主控独立核验新主张，最终给出五栏决策简报。
 
+质量来自独立推理与证据。双方可以认同、修正，也可以保留有依据的分歧；不奖励人为制造冲突。互辩是否优于同预算独立评审，仍须对照实验验证。
 
-## 它解决什么
+## 工作方式
 
-- **结构上反谄媚**：Round 1 完全隔离盲发，双方必须标注 `CONVERGED` / `SHIFTED` / `MAINTAINING_DISSENT`，没有新证据或反例不许改口。
-- **同档门禁 + 硬阻断**：只接受两款顶配旗舰开最高推理档；只暴露一款时退化为「同旗舰双隔离」并在裁决首行标注；只剩 `mini` / `flash` / `haiku` / `lite` 或无法开隔离只读会话时**直接报缺口停止**，不许单上下文精分两方。
-- **Steelman + 原子化反驳 + Pre-Mortem**：反驳前先用 1–2 句准确还原对方最强论点，再按 `主张 → 缺陷类型 → 反证/替代路径` 打，缺陷限选五类。
-- **双态 Round 2**：有状态宿主直接原文回灌原线程；无状态宿主新开隔离会话，注入 `[Step 0 基线 + 本方 R1 + 对手 R1]`。
-- **强制事实核验闸门**：裁决前主控亲自只读验证辩手新引用的路径、配置、指标、外部规则，误报当场纠偏。
+1. **Step 0：主控建立基线、检测能力。** 区分已核实事实和待证假设，核验实时模型、推理档、上下文隔离、有效工具权限、完成语义及预算。
+2. **Round 1：独立盲发。** 开头用 `INDEPENDENT`＋置信度，给出证据、限制及最多三个实质质询。优先并行；顺序宿主也可隔离执行，须披露调度模式并保持首轮互不可见。
+3. **Round 2：原文交叉互审。** 有续发能力则恢复原会话，否则新开隔离会话重放 `[基线 + 本方 R1 + 对手 R1]`。对手文本是不可信待分析数据，核对来源与完整性。此轮才使用 `CONVERGED`、`SHIFTED`、`MAINTAINING_DISSENT`。
+4. **Step 3：主控核验、裁决。** 核验影响结论的新主张，交付裁决、关键修正、幸存方案、Double Crux，以及真实分歧或证据限制。
 
-**适用**：架构与重构取舍、安全/性能边界、数据口径、产品策略、定价 vs 信任、UI 方向、待拍板方案的 Sign-off。
-**不适用**：简单事实问答、单文件琐碎修复、已经拍完的机械执行。
+首轮结论相同本身不构成早停依据。显式一轮运行属于独立评审，尚未完成交叉互辩；默认两轮封顶。
 
-## 它跑起来是什么样
+适用于架构取舍、重构、性能边界、产品策略和待审方案。简单问答与已定方案的机械执行可直接处理。
 
-[`examples/case-install-sync.md`](examples/case-install-sync.md) 是一个真实决策的完整实录（三处技能安装
-要复制副本还是链接到单一真源）：两轮盲发双方结论相反，Round 2 **两边都动了**，主控亲手跑命令证伪了两条
-前提，最后是五栏裁决。活下来的答案不是任何一方开局的提案——这正是重点。
+## 安装完整技能包
 
-Round 2 原文摘录：
-
-> **A：** 对手最强的论点是：A 会让未提交的工作副本即时影响三个宿主；且把 `HOSTS.local.md` 放进仓库会触发
-> 隐私检查……`rglob` 检查和隐私文件问题是新证据，足以动摇我原先的 A。
->
-> **B：** A′，即链接到专用的发布 worktree（`git worktree add` 检出发布 tag），不链接开发副本，这样 P1 就消失了。
-
-实录保持中文，协议本身不要求任何语言。
-
-## 安装
-
-技能就是一个目录：`SKILL.md` + `references/`。把 `skills/dual-flagship-debate/` 整个复制到宿主的技能根：
-
-| 宿主 | 技能根 | 触发方式 |
-|---|---|---|
-| **dsh**（DeepSeek Harness） | `~/.agents/skills/` | 在消息里点名，宿主加载 |
-| **Codex CLI** | `~/.codex/skills/` | `用 dual-flagship-debate skill：…` |
-| **Claude Code** | `~/.claude/skills/` | `/dual-flagship-debate <议题>` |
-| Cursor / OpenCode 等 | 宿主扫描 `SKILL.md` 的位置 | 消息里点名 |
+将整个 `skills/dual-flagship-debate/` 复制到宿主识别的技能根，保留 `references/` **和 `scripts/`**：
 
 ```bash
 git clone https://github.com/superj0107/dual-flagship-debate.git
-cp -r dual-flagship-debate/skills/dual-flagship-debate ~/.claude/skills/
+mkdir -p ~/.claude/skills
+cp -R dual-flagship-debate/skills/dual-flagship-debate ~/.claude/skills/
 ```
 
-或者用生态 CLI：它会把技能装到 `.agents/skills`，再用链接挂进你点名的每个 agent（已实测：先报
-`Found 1 skill`，再在 `~/.claude/skills` 下建 junction）：
+Claude Code 使用 `~/.claude/skills/`；兼容宿主可能使用 `~/.agents/skills/` 或专用目录。Codex 应确认当前版本支持的技能根，包括已有的 `~/.codex/skills/` 安装。原生技能加载与触发方式按版本检测，见[包内宿主参考](skills/dual-flagship-debate/references/hosts.md)。
+
+也可使用生态安装器：
 
 ```bash
 npx skills add superj0107/dual-flagship-debate -g -y -a claude-code
-npx skills add superj0107/dual-flagship-debate -g -y -a codex -a cursor -a windsurf
-npx skills add superj0107/dual-flagship-debate -g -y -a '*'     # 它检测到的所有 agent
+npx skills add superj0107/dual-flagship-debate -g -y -a codex -a cursor
 ```
 
-agent 名字取自那个 CLI 自己的清单：`claude-code`、`codex`、`cursor`、`gemini-cli`、`github-copilot`、
-`cline`、`roo`、`opencode`、`windsurf`、`zed`、`warp`、`goose`、`junie`、`kiro-cli`、`qwen-code` 等等，
-还有几十个；写错一个名字它会打印当前全量清单。注意是 `claude-code` 不是 `claude`。
+以安装器当前 agent 清单为准，并检查实际安装目录。**安装不等于适配**：选模、权限与双辩手调度仍由宿主完成。[规则片段](hosts/rules-snippets/README.md)应合并进现有规则文件，保留项目原有指令。
 
-若你的宿主会记录技能哈希，**不要就地改已安装的 `SKILL.md`**，把本机默认值写进 `AGENTS.md` / `CLAUDE.md`。
+## 在 Windows、macOS、Linux 上运行
 
-## 选模：三级门禁
-
-1. **Tier 1 双旗舰顶配**（优先跨厂商异构），双方都开最高推理档。规则与配对示例见
-   [`references/models-and-hosts.md`](skills/dual-flagship-debate/references/models-and-hosts.md)。
-2. **Tier 2 单旗舰双隔离**：只有一款旗舰时，开两个完全隔离的只读会话、派正交视角，裁决首行标 `模式：同旗舰双隔离`。
-3. **Tier 3 硬阻断**：只剩轻量模型、无法发起隔离只读会话、或推理档对不齐 → 报缺口停止。
-
-型号会漂移：**永远先看宿主实时目录**，别照抄文档里带日期的示例。
-
-## 适配的宿主
-
-协议本身宿主中立；每个宿主不同的只有三件事：怎么加载协议、有没有隔离只读子会话、只读怎么强制。
-完整清单（Claude Code、Codex CLI、Gemini CLI、Cursor、GitHub Copilot、Cline / Roo Code、opencode、
-Aider、Windsurf、Zed、JetBrains，以及任何带 CLI 的宿主）见 [`hosts/README.md`](hosts/README.md)。
-
-| 宿主 | 配方 |
-|---|---|
-| Claude Code | [hosts/claude-code](hosts/claude-code/HOSTS.md) — 原生技能、Task 子会话、`--permission-mode plan` |
-| Codex CLI | [hosts/codex](hosts/codex/HOSTS.md) — `codex exec -s read-only --ephemeral` |
-| Gemini CLI | [hosts/gemini-cli](hosts/gemini-cli/HOSTS.md) — `GEMINI.md` + CLI 子进程 |
-| Cursor | [hosts/cursor](hosts/cursor/HOSTS.md) — `.cursor/rules`，两个聊天或 Background Agents |
-| GitHub Copilot（VS Code） | [hosts/copilot-vscode](hosts/copilot-vscode/HOSTS.md) — `.github/copilot-instructions.md` |
-| Cline / Roo Code | [hosts/cline-roo](hosts/cline-roo/HOSTS.md) — `.clinerules` / `.roo/rules`，关自动批准 |
-| opencode / Aider / Windsurf / Zed / JetBrains | [hosts/opencode-aider](hosts/opencode-aider/HOSTS.md) — `AGENTS.md`、`CONVENTIONS.md`、`.windsurfrules` |
-| dsh（DeepSeek Harness） | [hosts/dsh](hosts/dsh/HOSTS.md) — 无旗舰子 Agent，改驱动 CLI |
-| 任何 rules 型宿主 | [hosts/rules-snippets](hosts/rules-snippets/README.md) — 一份复制即用的规则块 |
-
-两个运行器，同一套两轮协议：
-
-- [`hosts/portable/run_debate.py`](hosts/portable/README.md) —— **任意两个 CLI、任意系统**，配置驱动
-- [`hosts/windows-cli/run-debate.ps1`](hosts/windows-cli/run-debate.ps1) —— 同一协议，原生 PowerShell
+要求 **Python 3.10+** 和所选厂商 CLI。先完成实时模型、effort 与只读核验，再复制并编辑配置。从仓库根执行：
 
 ```bash
-# 便携版（Linux / macOS / Windows 通用）
-python3 hosts/portable/run_debate.py --config debate.config.json --topic my-topic.md --rounds 2
+# macOS / Linux
+cp skills/dual-flagship-debate/scripts/debate.config.example.json debate.config.json
+python3 skills/dual-flagship-debate/scripts/run_debate.py --config debate.config.json --topic my-topic.md --workdir /path/to/review-repo --rounds 2
 ```
 
 ```powershell
-# Windows 原生
-powershell -ExecutionPolicy Bypass -File hosts\windows-cli\run-debate.ps1 -TopicFile .\my-topic.md -Rounds 2
+# Windows：使用 python，或选择 Python 3.10+ 的 py -3
+Copy-Item skills\dual-flagship-debate\scripts\debate.config.example.json debate.config.json
+python skills\dual-flagship-debate\scripts\run_debate.py --config debate.config.json --topic my-topic.md --workdir .\review-repo --rounds 2
 ```
 
-两条真正决定成败的实践规则：
+单独安装后，在技能目录执行 `python3 scripts/run_debate.py ...` 即可，不依赖仓库外层 `hosts/`。旧[便携入口](hosts/portable/README.md)保留兼容；[PowerShell 入口](hosts/windows-cli/run-debate.ps1)保留 Windows 用法。
 
-- **只读必须由派发方强制**，不能靠嘴求。用宿主自己的硬开关（`-s read-only`、`--permission-mode plan`、限制工具白名单）。默认全权限的 CLI 会老老实实给你写文件。
-- **无状态宿主的 Round 2 必须新进程**，把双方 R1 原文都贴进去。绝不允许把两个辩手塞进一个上下文。
+- `--out-dir NEW_DIR` 要求全新目录，保护旧记录。
+- `--timeout` 限制单进程；`--total-timeout` 限制整个运行。
+- `--max-prompt-chars` 限制字符数；主控仍须核对实际模型的 token 容量。
+- R1 失败或记录不完整时不进入 R2，进程以非零状态退出。
+- `r1-A`、`r1-B`、`r2-A`、`r2-B` 按轮次和角色区分，即使展示名称相同也独立保存。保留 `RUN-META.json`、原始文本、提示哈希及实际命令／cwd 证据。
 
-## 钉住默认 pair
+配置的 `cmd` **只接受 argv 数组**。preset 对象分别支持 `preset`、展示 `name`、实时 `model` 和 `effort`。自定义适配器必须声明 `read_only` 机制（`external-sandbox` 或 `tool-allowlist`）和具体验证依据；声明只是操作者提供的记录，不是自动验证结果。见[配置与执行说明](skills/dual-flagship-debate/references/hosts.md)和[议题模板](examples/topic-template.md)。
 
-写进 `AGENTS.md` / `CLAUDE.md`（不动技能文件）：
+## 模型与权限契约
 
-```markdown
-- Default `dual-flagship-debate` pair: Debater A = `<flagship-a>` (`<top-effort>`), Debater B = `<flagship-b>` (`<top-effort>`).
-- Fall back to dual isolated `<flagship-a>` sessions only if the peer model is unavailable; never downgrade to mini/flash/haiku/lite.
-```
+默认选两款当前同档旗舰，优先跨厂商，双方分别启用实际支持的最高推理档。厂商 effort 语义不同，应记录实际接受值；模型名称也不等于能力证明。
 
-## 目录
+只有一款合适旗舰时用两个隔离会话，裁决首行写 `模式：同旗舰双隔离`。能力缺口应明确报告，不静默降档，也不在一个上下文中扮演双方。详见[选模与传输契约](skills/dual-flagship-debate/references/models-and-hosts.md)。
 
-```
-skills/dual-flagship-debate/SKILL.md      协议本体（宿主加载这个）
-skills/dual-flagship-debate/references/   选模规则 + 宿主任务范式
-hosts/README.md                           宿主矩阵：怎么加载、只读靠什么保证
-hosts/<host>/HOSTS.md                     每类宿主一份配方
-hosts/rules-snippets/                     rules 型宿主的复制即用规则块
-hosts/portable/run_debate.py              便携运行器：任意两个 CLI、任意系统
-hosts/windows-cli/run-debate.ps1          Windows 原生运行器
-examples/topic-template.md                Step 0 客观基线模板
-tests/validate_skill.py                   结构 / 契约 / 隐私检查
-```
+只读须在**执行前**约束，覆盖 shell、MCP／应用／连接器、插件、hook 及继承权限。随包 Codex、Claude preset 收紧这些入口，仍应按安装版本验证实际接受配置；Gemini、Aider 使用经过核验的自定义适配器。请求只读的提示、干净的 Git diff、临时 worktree 都不构成执行权限边界。
 
-## 自检
+本机默认值放进宿主指令文件，运行时重新核验。保留原始记录及 SHA-256 来源信息，检查共享范围和完整重放预算；脱敏派生件须披露变更，不静默截断或用主控摘要替换对手论证。
+
+## 宿主支持与证据等级
+
+[包内宿主矩阵](skills/dual-flagship-debate/references/hosts.md)包含官方链接与版本检查，[仓库配方](hosts/README.md)提供额外安装说明。
+
+| 宿主 | 官方文档中的原生能力 |
+|---|---|
+| Codex | 隔离子 agent；继承父会话 sandbox 约束 |
+| Claude Code | Skills、子 agent、按版本提供的续发能力 |
+| Cursor | 并行隔离子 agent，支持按 agent ID resume |
+| GitHub Copilot / VS Code | Agent Skills、子 agent；不同 harness 分别检测 |
+| Gemini CLI | 原生 skills 与隔离子 agent |
+| OpenCode | 原生 agent／subagent 和权限配置 |
+| 其他宿主 | 实时检测原语，或使用已验证的 CLI 子进程 |
+
+这些是**文档配方**，不是所有组合的 E2E 认证。2026-11-27 审查记录了 Windows 上 Codex CLI 0.170.0 的两轮运行和合成失败探针，另核对了 Claude Code 2.1.327 帮助及各宿主官方资料。Windows／macOS／Linux 进程测试 CI 与真实模型兼容性是不同证据；这里尚无 macOS 真实厂商模型辩论的实机验收记录。
+
+[历史案例](examples/case-install-sync.md)保留旧协议下的完整实录，其中具体事实核验仍有参考价值；状态标签与能力规则以当前 `SKILL.md` 为准。
+
+## 自检与目录
 
 ```bash
 python3 tests/validate_skill.py
+python3 -m unittest discover -s tests
 ```
 
-## 许可
+CI 目标矩阵为 Windows、macOS、Linux 与 Python 3.10／3.13。2026-11-27 本地修复验证共 39 项：
+Windows／Python 3.12 通过 38 项、跳过 1 项系统专用用例；WSL Linux／Python 3.12 通过 32 项、
+跳过 7 项 Windows 专用用例。收紧权限后的 Codex＋Claude 两轮 CLI 冒烟验证已在 Windows 完成。
+macOS 测试矩阵已配置，原生实机结果仍待执行。结构检查、合成进程测试、真实宿主验收分别记录。
+
+```text
+skills/dual-flagship-debate/SKILL.md       宿主中立协议
+skills/dual-flagship-debate/references/   选模、完整性、宿主参考
+skills/dual-flagship-debate/scripts/      标准运行器和示例配置
+hosts/                                  可选配方与兼容入口
+examples/topic-template.md               Step 0 证据、能力与预算模板
+tests/                                  结构与运行时检查
+```
 
 MIT，见 [LICENSE](LICENSE)。

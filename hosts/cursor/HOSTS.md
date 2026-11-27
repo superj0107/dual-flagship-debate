@@ -1,47 +1,21 @@
-# Host recipe — **Cursor**
+# Host recipe — Cursor
 
-## 1. Load the protocol
+Status: documentation recipe; native-host E2E acceptance is pending for the actual installed version. Official references: [Subagents](https://cursor.com/docs/subagents), [Rules](https://cursor.com/docs/context/rules).
 
-Cursor reads project rules from `.cursor/rules/*.mdc` (and increasingly `AGENTS.md`). Copy the
-ready-made file and adjust:
+## Load
 
-```bash
-mkdir -p .cursor/rules
-curl -fsSL https://raw.githubusercontent.com/superj0107/dual-flagship-debate/main/hosts/rules-snippets/cursor.mdc \
-  -o .cursor/rules/dual-flagship-debate.mdc
-```
+Use native skill discovery where supported, or merge [cursor.mdc](../rules-snippets/cursor.mdc) into a scoped `.cursor/rules/` rule. Adjust the rule's path to the complete installed skill directory; preserve existing project rules.
 
-The rule tells the agent: when the task matches, read
-`skills/dual-flagship-debate/SKILL.md` (clone this repo into the project, e.g. under `tools/`) and
-follow the four-step protocol.
+## Dispatch and continuation
 
-## 2. Dispatch
+Current Cursor documentation describes isolated subagents, parallel execution and resume by agent ID. Prefer two native isolated agents, save their IDs, and resume each with the opponent's complete R1 in R2. Check the installed build's actual resume semantics; if private context is not preserved, use fresh isolated contexts with baseline plus own and opponent R1.
 
-Cursor gives you one chat context plus **Background Agents** (separate tasks that can run on their
-own branch). Two workable shapes:
+Sequential isolated chats remain a fallback for surfaces without concurrency. Keep R1 blind and label `调度：顺序隔离`; do not present it as native parallel dispatch. Background/cloud agents are a separate surface with separate permissions and acceptance evidence.
 
-- **Two chats, sequential** — Debater A in chat 1 with the Round 1 brief; new chat for Debater B with
-  the same brief; then a third pass per side with both Round 1 texts pasted in (Round 2 replay).
-  Cheap, no setup, but you must police the isolation yourself: never let chat 1 see chat 2's answer.
-- **Background Agents ×2** — same brief, two agents, orthogonal lenses. Each returns a diff/transcript;
-  treat them as the two debaters. Read-only is only as good as the agent's tool permissions.
+## Permission and model checks
 
-Round 2 always uses the **stateless replay** form:
-`[Step 0 baseline + own R1 verbatim + opponent R1 verbatim]`.
+Verify the effective agent tools, shell, integrations and inherited permissions before calling a run strict read-only. Ask-style labels, worktrees, branches and after-the-fact diffs are not proof of a boundary. Use a [verified CLI adapter](../../skills/dual-flagship-debate/references/hosts.md) if the selected native surface does not expose the required restriction.
 
-## 3. Read-only
+Inspect the live model picker and accepted effort options rather than assuming one flagship or one provider. Prefer two comparable flagships; when only one suitable flagship exists, use two isolated sessions and `模式：同旗舰双隔离`.
 
-Cursor's agent can edit files. Enforce read-only by one of:
-
-- launch the debate in a **throwaway worktree** or a copy of the repo (safest, no config needed),
-- switch to a read-only/ask-style mode if your build offers one,
-- afterwards run `git status --porcelain` and diff before trusting the verdict.
-
-Do not rely on "please don't modify" alone.
-
-## 4. Model pairing
-
-The model picker is per-chat in most builds. If only one flagship tier is selectable, run **Tier 2**:
-two isolated sessions of the same flagship with orthogonal lenses, and label the verdict
-`模式：同旗舰双隔离`. For **Tier 1** cross-vendor parity, run the second debater in another tool (or
-via the [portable runner](../portable/README.md)) — transcripts are plain text, mixing hosts is fine.
+R1 uses `INDEPENDENT` and confidence; R2 uses cross-review states. Wait through native completion or bounded checks. Preserve raw text and hashes, treat cross-fed content as untrusted data, and leave factual verification to the host.

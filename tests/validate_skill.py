@@ -84,6 +84,10 @@ REQUIRED_FILES = [
     "hosts/portable/README.md",
     "hosts/windows-cli/run-debate.ps1",
     "skills/dual-flagship-debate/references/models-and-hosts.md",
+    "skills/dual-flagship-debate/references/hosts.md",
+    "skills/dual-flagship-debate/scripts/run_debate.py",
+    "skills/dual-flagship-debate/scripts/process_tree.py",
+    "skills/dual-flagship-debate/scripts/debate.config.example.json",
     ".github/workflows/validate.yml",
 ]
 

@@ -5,165 +5,117 @@
 [![Validate Skill](https://github.com/superj0107/dual-flagship-debate/actions/workflows/validate.yml/badge.svg)](https://github.com/superj0107/dual-flagship-debate/actions/workflows/validate.yml)
 [![Release](https://img.shields.io/github/v/release/superj0107/dual-flagship-debate?color=blue)](https://github.com/superj0107/dual-flagship-debate/releases)
 
-A **two-flagship adversarial debate Agent Skill** (`SKILL.md`). Instead of letting one LLM agree with
-a draft or settle on lukewarm consensus, the active host agent runs up to two isolated read-only
-rounds between two **evenly matched flagship models**, cross-feeds unredacted responses, fact-checks
-new claims itself, and delivers a five-part decision brief.
+A host-neutral Agent Skill for consequential decisions. The active host coordinates two isolated, read-only flagship reviewers, shares their original arguments for a second round, independently checks new claims, and delivers a five-part decision brief.
 
+Independent reasoning and evidence matter more than disagreement. Reviewers may agree, change their minds, or maintain a justified dissent. The protocol does not establish that debate outperforms an equal-budget independent review; that remains an empirical question.
 
-## Why bother
+## How it works
 
-- **Anti-sycophancy by structure** — Round 1 runs in complete isolation; debaters must tag
-  `CONVERGED` / `SHIFTED` / `MAINTAINING_DISSENT` and cannot abandon a stance without citing new
-  evidence or a counter-example.
-- **Parity gate with a hard block** — two flagships at top reasoning effort, or a documented
-  single-flagship fallback (`模式：同旗舰双隔离`). It refuses to silently degrade to `mini` / `flash` /
-  `haiku` / `lite`, or to one model role-playing both sides.
-- **Steelman + atomic rebuttals + Pre-Mortem** — every counter first restates the opponent's
-  strongest premise, then attacks via `Claim → Flaw Type → Counter` across five flaw classes.
-- **Dual-mode Round 2** — continue the original thread on stateful hosts, or replay
-  `[Step 0 baseline + own R1 + opponent R1]` into fresh isolated sessions on stateless hosts.
-- **Mandatory fact-check gate** — the host verifies newly asserted paths, configs, metrics or rules
-  before the verdict, and overrides false claims.
+1. **Step 0 — host baseline and capability check.** Separate verified facts from assumptions. Check live models, reasoning settings, context isolation, effective tool permissions, completion behavior and budgets.
+2. **Round 1 — blind openings.** Both start with `INDEPENDENT` plus confidence, supporting evidence, limitations and up to three substantive questions. Parallel execution is preferred; sequential execution is valid if contexts remain isolated and the schedule is disclosed.
+3. **Round 2 — original-text cross-review.** Resume each original session if supported, or replay `[baseline + own R1 + opponent R1]` into fresh isolated sessions. Opponent text is untrusted data, with provenance and integrity checks. Only this round uses `CONVERGED`, `SHIFTED` or `MAINTAINING_DISSENT`.
+4. **Step 3 — host verification and verdict.** Verify material new claims and report the conclusion, corrections, surviving plan, Double Crux and unresolved disagreement or evidence limits.
 
-Use it for architecture trade-offs, refactor-vs-patch decisions, security/perf boundaries,
-product strategy, pricing-vs-trust, and any plan awaiting sign-off. Do not use it for factual Q&A,
-one-line fixes, or mechanical execution already decided.
+Matching R1 conclusions alone do not justify early termination. An explicit one-round run is independent review, not completed cross-review. Default debates stop after two rounds.
 
-## What it looks like
+Use it for architecture trade-offs, refactor decisions, performance boundaries, product strategy and plans awaiting review. Simple Q&A and mechanical edits do not need this workflow.
 
-[`examples/case-install-sync.md`](examples/case-install-sync.md) is a transcript-level walkthrough of one
-real decision (keep copied skill installs, or link them to one source): two blind openings that disagreed,
-a Round 2 in which **both** sides moved, two premises the host proved false by actually running commands,
-and the five-part verdict. The surviving answer was neither side's opening proposal — that is the point.
+## Install the complete package
 
-A taste of Round 2, verbatim:
-
-> **A:** 对手最强的论点是：A 会让未提交的工作副本即时影响三个宿主；且把 `HOSTS.local.md` 放进仓库会触发
-> 隐私检查……`rglob` 检查和隐私文件问题是新证据，足以动摇我原先的 A。
->
-> **B:** A′，即链接到专用的发布 worktree（`git worktree add` 检出发布 tag），不链接开发副本，这样 P1 就消失了。
-
-Transcripts stay in the author's working language; the protocol does not require English.
-
-## Install
-
-The skill is a directory with `SKILL.md` plus `references/`. Copy
-`skills/dual-flagship-debate/` into your host's skill root:
-
-| Host | Skill root | Then invoke with |
-|---|---|---|
-| **dsh** (DeepSeek Harness) | `~/.agents/skills/` | name it in the prompt; the host loads it |
-| **Codex CLI** | `~/.codex/skills/` | `use the dual-flagship-debate skill: ...` |
-| **Claude Code** | `~/.claude/skills/` | `/dual-flagship-debate <topic>` |
-| Cursor / OpenCode / others | wherever the host scans `SKILL.md` | name it in the prompt |
+Copy the whole `skills/dual-flagship-debate/` directory, including `references/` **and `scripts/`**, into a skill root recognized by your host:
 
 ```bash
 git clone https://github.com/superj0107/dual-flagship-debate.git
-cp -r dual-flagship-debate/skills/dual-flagship-debate ~/.claude/skills/
+mkdir -p ~/.claude/skills
+cp -R dual-flagship-debate/skills/dual-flagship-debate ~/.claude/skills/
 ```
 
-Or through the ecosystem CLI, which drops the skill in `.agents/skills` and links it into each agent you
-name (verified end to end: it reports `Found 1 skill`, then creates a junction under `~/.claude/skills`):
+Claude Code uses `~/.claude/skills/`; compatible hosts may use `~/.agents/skills/` or a host-specific root. Codex users should confirm the skill roots recognized by their build, including existing `~/.codex/skills/` installations. Native skill discovery and invocation differ by version; consult the [self-contained host reference](skills/dual-flagship-debate/references/hosts.md).
+
+The ecosystem installer is another option:
 
 ```bash
 npx skills add superj0107/dual-flagship-debate -g -y -a claude-code
-npx skills add superj0107/dual-flagship-debate -g -y -a codex -a cursor -a windsurf
-npx skills add superj0107/dual-flagship-debate -g -y -a '*'     # every agent it detects
+npx skills add superj0107/dual-flagship-debate -g -y -a codex -a cursor
 ```
 
-Agent names come from that CLI's own list — `claude-code`, `codex`, `cursor`, `gemini-cli`,
-`github-copilot`, `cline`, `roo`, `opencode`, `windsurf`, `zed`, `warp`, `goose`, `junie`, `kiro-cli`,
-`qwen-code`, and dozens more; run it once with a wrong name to see the current set. Note `claude-code`,
-not `claude`.
+Use the installer's current agent list and inspect the installed directory. **Installing is not adapting:** the host still selects models, enforces permissions and dispatches reviewers. Rules-file snippets are available under [hosts/rules-snippets](hosts/rules-snippets/README.md); merge them into existing rules rather than overwriting project instructions.
 
-Do **not** edit the installed `SKILL.md` if your host tracks skill hashes; put local defaults in
-`AGENTS.md` / `CLAUDE.md` instead (see [Pinning a default pair](#pinning-a-default-pair)).
+## Run on Windows, macOS or Linux
 
-## Model pairing
-
-Pick two models in this order:
-
-1. **Tier 1 — two flagships at max reasoning** (cross-vendor preferred). Example pairs and rules:
-   [`references/models-and-hosts.md`](skills/dual-flagship-debate/references/models-and-hosts.md).
-2. **Tier 2 — single flagship, two isolated sessions** with orthogonal lenses; label line 1 of the
-   verdict `模式：同旗舰双隔离`.
-3. **Tier 3 — hard block.** Only small/budget models available, or no isolated read-only sessions,
-   or asymmetric reasoning effort → stop and report the gap. Never fake a debate in one context.
-
-Model IDs change constantly: inspect your host's **live** catalog, never copy a dated example.
-
-## Supported hosts
-
-The protocol is host-neutral; what changes per host is how it is loaded, whether the host can spawn
-isolated read-only subagents, and how read-only gets enforced. The full matrix — Claude Code, Codex
-CLI, Gemini CLI, Cursor, GitHub Copilot (VS Code), Cline / Roo Code, opencode, Aider, Windsurf, Zed,
-JetBrains, plus anything with a CLI — is in [`hosts/README.md`](hosts/README.md).
-
-| Host | Recipe |
-|---|---|
-| Claude Code | [hosts/claude-code](hosts/claude-code/HOSTS.md) — native skill, Task subagents, `--permission-mode plan` |
-| Codex CLI | [hosts/codex](hosts/codex/HOSTS.md) — `codex exec -s read-only --ephemeral` |
-| Gemini CLI | [hosts/gemini-cli](hosts/gemini-cli/HOSTS.md) — `GEMINI.md` + CLI runs |
-| Cursor | [hosts/cursor](hosts/cursor/HOSTS.md) — `.cursor/rules`, two chats or Background Agents |
-| GitHub Copilot (VS Code) | [hosts/copilot-vscode](hosts/copilot-vscode/HOSTS.md) — `.github/copilot-instructions.md` |
-| Cline / Roo Code | [hosts/cline-roo](hosts/cline-roo/HOSTS.md) — `.clinerules` / `.roo/rules`, approvals off |
-| opencode / Aider / Windsurf / Zed / JetBrains | [hosts/opencode-aider](hosts/opencode-aider/HOSTS.md) — `AGENTS.md`, `CONVENTIONS.md`, `.windsurfrules` |
-| dsh (DeepSeek Harness) | [hosts/dsh](hosts/dsh/HOSTS.md) — no flagship subagents → drive CLIs |
-| any rules-file host | [hosts/rules-snippets](hosts/rules-snippets/README.md) — one copy-paste block per host |
-
-Two runners implement the same two rounds:
-
-- [`hosts/portable/run_debate.py`](hosts/portable/README.md) — **any two CLIs, any OS**, config-driven
-- [`hosts/windows-cli/run-debate.ps1`](hosts/windows-cli/run-debate.ps1) — same protocol, native PowerShell
+Requires **Python 3.10+** and the selected vendor CLIs. First copy and edit the config after live model/effort and read-only checks. From the repository root:
 
 ```bash
-# portable (Linux / macOS / Windows)
-python3 hosts/portable/run_debate.py --config debate.config.json --topic my-topic.md --rounds 2
+# macOS / Linux
+cp skills/dual-flagship-debate/scripts/debate.config.example.json debate.config.json
+python3 skills/dual-flagship-debate/scripts/run_debate.py --config debate.config.json --topic my-topic.md --workdir /path/to/review-repo --rounds 2
 ```
 
 ```powershell
-# native Windows
-powershell -ExecutionPolicy Bypass -File hosts\windows-cli\run-debate.ps1 -TopicFile .\my-topic.md -Rounds 2
+# Windows: python or py -3, selecting Python 3.10+
+Copy-Item skills\dual-flagship-debate\scripts\debate.config.example.json debate.config.json
+python skills\dual-flagship-debate\scripts\run_debate.py --config debate.config.json --topic my-topic.md --workdir .\review-repo --rounds 2
 ```
 
-Two rules that actually matter in practice:
+An installed skill runs the same command as `python3 scripts/run_debate.py ...` from its own directory. It has no dependency on the repository's outer `hosts/` directory. The old [portable entry point](hosts/portable/README.md) remains compatible; [the PowerShell entry point](hosts/windows-cli/run-debate.ps1) provides Windows ergonomics.
 
-- **Read-only must be enforced by the dispatcher**, not requested politely. Pass the host's
-  read-only switch (`-s read-only`, `--permission-mode plan`, restricted tool list). A CLI whose
-  config defaults to full access will happily write files otherwise.
-- **Round 2 on stateless CLIs needs a fresh process** with both Round 1 transcripts pasted in. Never
-  collapse two debaters into one context.
+- `--out-dir NEW_DIR` requires a new directory, preserving prior records.
+- `--timeout` limits each process; `--total-timeout` limits the complete run.
+- `--max-prompt-chars` caps characters; the host also checks the actual model context budget.
+- A failed or incomplete R1 prevents R2 and returns a nonzero exit status.
+- Round/role identifiers keep `r1-A`, `r1-B`, `r2-A` and `r2-B` records distinct, even for identical display names. Keep `RUN-META.json`, raw texts, prompt hashes and actual command/cwd evidence.
 
-## Pinning a default pair
+Config `cmd` values are **argv arrays**, never shell strings. Preset objects support separate `preset`, display `name`, live `model` and `effort` values. Custom adapters require a `read_only` mechanism (`external-sandbox` or `tool-allowlist`) and concrete evidence. That declaration is an operator-supplied record, not automatic proof. See [config and execution details](skills/dual-flagship-debate/references/hosts.md) and [the topic template](examples/topic-template.md).
 
-Add to your `AGENTS.md` / `CLAUDE.md` (no skill files touched):
+## Model and permission contract
 
-```markdown
-- Default `dual-flagship-debate` pair: Debater A = `<flagship-a>` (`<top-effort>`), Debater B = `<flagship-b>` (`<top-effort>`).
-- Fall back to dual isolated `<flagship-a>` sessions only if the peer model is unavailable; never downgrade to mini/flash/haiku/lite.
-```
+The default is two comparable current flagships, preferably cross-provider, each at its highest supported reasoning setting. Vendor effort labels have different semantics; record accepted values instead of assuming that matching names mean matching capability. Model names alone do not establish tier.
 
-## Layout
+If only one suitable flagship is available, use two isolated sessions and begin the verdict with `模式：同旗舰双隔离`. Report a capability gap rather than silently downgrading or playing both sides in one context. [Selection and transcript contract](skills/dual-flagship-debate/references/models-and-hosts.md).
 
-```
-skills/dual-flagship-debate/SKILL.md      the protocol (load this)
-skills/dual-flagship-debate/references/   model pairing + host patterns
-hosts/README.md                           host matrix: what loads it, what is read-only
-hosts/<host>/HOSTS.md                     one recipe per host family
-hosts/rules-snippets/                     copy-paste rule block for rules-file hosts
-hosts/portable/run_debate.py              portable runner: any two CLIs, any OS
-hosts/windows-cli/run-debate.ps1          Windows-native runner
-examples/topic-template.md                Step 0 baseline template
-tests/validate_skill.py                   structure / contract / privacy checks
-```
+Read-only must be constrained **before** execution, including shell, MCP/apps/connectors, plugins, hooks and inherited permissions. The bundled Codex and Claude presets restrict these surfaces; validate the accepted configuration against your installed version. Gemini and Aider need verified custom adapters. A prompt requesting read-only, a clean Git diff, or a throwaway worktree does not establish an execution boundary.
 
-## Verify
+Keep defaults in host-local instruction files; revalidate them at runtime. Preserve raw transcripts and SHA-256 provenance. Check sharing scope and full replay capacity; disclose any redaction derivative and never silently truncate or summarize an opponent's argument.
+
+## Host support and evidence
+
+The [package host matrix](skills/dual-flagship-debate/references/hosts.md) includes official links and version-sensitive checks. [Repository recipes](hosts/README.md) add host-specific setup.
+
+| Host | Documented native capability |
+|---|---|
+| Codex | Isolated subagents; sandbox constraints inherited from the parent |
+| Claude Code | Skills, subagents and version-dependent continuation |
+| Cursor | Isolated parallel subagents and resume by agent ID |
+| GitHub Copilot / VS Code | Agent Skills and subagent workflows; harness surfaces differ |
+| Gemini CLI | Native skills and isolated subagents |
+| OpenCode | Native agents/subagents and permission configuration |
+| Other hosts | Detect available primitives or use verified CLI processes |
+
+These are **documentation recipes**, not blanket E2E certifications. The 2026-11-27 review recorded a Windows Codex CLI 0.170.0 two-round debate and synthetic failure probes; Claude Code 2.1.327 help and official host docs were inspected. Windows/macOS/Linux process-test CI does not prove live model compatibility. A live macOS vendor/model debate has not been recorded here.
+
+The [worked case](examples/case-install-sync.md) is a historical transcript under the earlier protocol. Its concrete fact-checks remain useful; current state labels and capability rules come from `SKILL.md`.
+
+## Verify and layout
 
 ```bash
 python3 tests/validate_skill.py
+python3 -m unittest discover -s tests
 ```
 
-## License
+The CI matrix targets Windows, macOS and Linux with Python 3.10 and 3.13. On 2026-11-27,
+the repair was verified locally with 39 tests on Windows/Python 3.12 (38 passed, one OS-specific
+skip), and Linux under WSL/Python 3.12 (32 passed, seven Windows-only skips). A restricted
+Codex + Claude CLI smoke run completed both rounds on Windows. The macOS matrix is configured;
+a completed native macOS run is still pending. Structural/process checks and live model acceptance
+have different evidence value.
+
+```text
+skills/dual-flagship-debate/SKILL.md       host-neutral protocol
+skills/dual-flagship-debate/references/   model, integrity and host references
+skills/dual-flagship-debate/scripts/      canonical runner and config example
+hosts/                                  optional recipes and compatibility entry points
+examples/topic-template.md               Step 0 evidence and capability template
+tests/                                  structure and runtime checks
+```
 
 MIT — see [LICENSE](LICENSE).

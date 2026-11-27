@@ -1,0 +1,14 @@
+{
+  "_comment": "Host verifies the live model catalog and top effort before dispatch. Add model/effort to each preset after discovery, or keep explicitly verified CLI defaults.",
+  "debaters": {
+    "A": {"preset": "codex-cli", "name": "Debater A"},
+    "B": {"preset": "claude-code", "name": "Debater B"}
+  },
+  "timeout_sec": 900,
+  "total_timeout_sec": 1800,
+  "max_prompt_chars": 120000,
+  "max_output_bytes": 2000000,
+  "max_audit_files": 50000,
+  "max_audit_bytes": 536870912,
+  "workdir": "."
+}

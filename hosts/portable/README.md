@@ -1,68 +1,147 @@
-# Portable runner — any two CLI agents, any OS
+# Portable runner — macOS, Linux and Windows
 
-`run_debate.py` is the host-neutral dispatcher. It does not know or care which vendor's CLI it drives:
-you give it two commands, it runs the protocol's two rounds and writes the transcripts.
+Python 3.10+ and two compatible model CLIs are required. The complete implementation ships
+inside the skill at `skills/dual-flagship-debate/scripts/`. This directory retains a compatibility
+entry point, so existing repository command paths still work.
 
-Requirements: Python 3.9+, and two CLI agents on `PATH` (or full paths in the config).
+## macOS and Linux
 
-## Quick start
-
-```bash
-cp hosts/portable/debate.config.example.json debate.config.json   # edit the two cmd arrays
-python3 hosts/portable/run_debate.py \
-  --config debate.config.json \
-  --topic my-topic.md \
-  --rounds 2
+```sh
+cp hosts/portable/debate.config.example.json debate.config.json
+# Verify live models/effort in your host; add model/effort fields or verify the CLI defaults.
+python3 hosts/portable/run_debate.py --config debate.config.json \
+  --topic my-topic.md --workdir /path/to/repo --rounds 2
 ```
 
-Output directory (default `debate-<timestamp>/`):
+Use `python3 --version` to check the runtime. On macOS the command works in zsh and bash,
+without PowerShell, GNU timeout, extra pip packages, or OS-specific installation scripts.
+An installed skill can be run directly with `python3 SKILL_DIR/scripts/run_debate.py`.
 
-```
-r1-A.out.md   r1-B.out.md     Round 1 answers (verbatim)
-r1-A.prompt.md r1-B.prompt.md the exact briefs sent
-r1-A.log.txt  r1-B.log.txt    child stderr (progress, errors)
-r2-*.md                        Round 2, only with --rounds 2
-RUN-META.json                  pair, timing, exit codes, char counts
-WORKSPACE-DIFF-WARNING.txt     only if the workspace changed during the run
+## Windows
+
+```powershell
+Copy-Item hosts/portable/debate.config.example.json debate.config.json
+python hosts/portable/run_debate.py --config debate.config.json --topic my-topic.md --workdir . --rounds 2
 ```
 
-## Config
+`py -3` also works. The optional `hosts/windows-cli/run-debate.ps1` translates PowerShell
+parameters and delegates to this same engine, preserving exit codes.
+
+## Configuration
 
 ```json
 {
   "debaters": {
-    "A": { "name": "codex-cli", "cmd": ["codex", "exec", "--skip-git-repo-check",
-                                          "-s", "read-only", "--ephemeral", "-o", "{out}"] },
-    "B": { "name": "claude-code", "cmd": ["claude", "-p", "--output-format", "text"] }
+    "A": {"preset": "codex-cli", "name": "Reviewer"},
+    "B": {"preset": "codex-cli", "name": "Reviewer"}
   },
   "timeout_sec": 900,
+  "total_timeout_sec": 1800,
   "workdir": "."
 }
 ```
 
-- `cmd` — argv list (or a shell string). The **brief is always fed on stdin**.
-- `{out}` — if present in any argument, it is replaced with the answer-file path, and the runner reads
-  that file afterwards instead of stdout. Use it for CLIs that write their final message to a file.
-- `{prompt}` — replaced with the brief's temp path, for CLIs that take a file instead of stdin.
-- `{workdir}` — replaced with the resolved workdir.
-- `"A": "claude-code"` — a plain string picks a preset. `--list-presets` prints them all:
-  `codex-cli`, `claude-code`, `gemini-cli`, `aider`.
+Identical presets and names are supported: the role ID A/B and unique run directory identify artifacts.
+The host still owns Step 0 model discovery/parity and Step 3 fact-checking. Optional `model` and
+`effort` fields pin each preset after live discovery. A `cli_version` and requested settings appear
+in metadata; inspect the CLI's runtime log to confirm the model actually used.
 
-## What the runner does *not* do
+Built-in presets restrict model tools:
 
-- **It does not make a CLI read-only.** Read-only comes from the flags in your `cmd`
-  (`-s read-only`, `--permission-mode plan`, tool allow-lists, auto-approve off). The runner only
-  snapshots `git status --porcelain` and warns if the tree changed.
-- **It does not fact-check.** Step 3 of the protocol — verifying the debaters' new claims — is the
-  host agent's job.
-- **It does not pick models.** Parity is your decision: two flagship tier models at max reasoning, or
-  a documented single-flagship fallback labelled `模式：同旗舰双隔离`. The runner cannot see your
-  model catalog.
+- `codex-cli`: explicit read-only sandbox, noninteractive approvals, ephemeral sessions; disables
+  apps, plugins, hooks and skill-driven MCP installation. Preflight reads the MCP catalog and
+  disables every configured server separately; an empty MCP table would merge existing entries.
+- `claude-code`: requires `--safe-mode`, `--tools Read,Grep,Glob`, plan permissions,
+  strict MCP configuration and no session persistence. Unsupported flags produce a preflight error.
 
-## Notes per platform
+Runtime storage such as CLI authentication/cache bookkeeping is owned by the CLI. Permission
+controls apply to the debaters' model tools and reviewed workspace. Native CLI hooks and plugins
+have different semantics across versions; retest restrictions when upgrading.
 
-- **Windows**: commands are spawned directly (no shell), so quoting behaves; PowerShell is fine as the
-  parent. `run-debate.ps1` in `hosts/windows-cli/` is the same protocol with native PS ergonomics.
-- **macOS / Linux**: run as-is; wrap with `caffeinate`/`timeout` if you need OS-level keep-awake.
-- **Long runs**: two flagship calls per round, 30–90 s each typically; a full two-round debate is
-  four calls. Set `timeout_sec` generously (the default 900 is per process, not total).
+For other CLIs, supply a **verified custom adapter**:
+
+```json
+{
+  "name": "Custom reviewer",
+  "cmd": ["MY_READONLY_CLI", "--prompt-file", "{prompt}"],
+  "read_only": {
+    "mechanism": "external-sandbox",
+    "evidence": "Describe the isolation/tool configuration and the write-blocking check actually performed"
+  }
+}
+```
+
+Allowed mechanisms are `external-sandbox` and `tool-allowlist`. This is the host's attestation,
+not an automatic proof of arbitrary command behavior. Prompt-only promises and Git status are
+insufficient. Gemini/Aider recipes require a verified custom adapter instead of the former
+unrestricted presets. Review arbitrary commands before running them.
+
+`cmd` accepts argv arrays only. The prompt is UTF-8 stdin. Literal tokens `{out}`, `{prompt}`,
+and `{workdir}` expand to absolute paths; other JSON/TOML braces remain literal. An `{out}`
+adapter must create its answer file; otherwise stdout is the answer. A missing file never falls
+back to progress/error text. Native executables and npm's known Node entry points preserve argv.
+Other Windows batch shims reject shell metacharacters; use the native executable for such arguments.
+
+Paths in the CLI and config resolve against the invocation's working directory. Optional per-role
+`cwd` values are resolved explicitly and included in the audit.
+
+## Outputs and failure handling
+
+`--out-dir` must be a new directory. By default a timestamp and random run ID prevent collisions.
+
+```text
+r1-A.out.md, r1-B.out.md          Complete Round 1 answers
+r2-A.out.md, r2-B.out.md          Complete Round 2 answers, if requested
+r1-A.prompt.md, ...              Exact UTF-8 prompts
+r1-A.log.txt, ...                Child stderr
+r1-A.stdout.txt, ...             Child stdout, separate from answer files
+RUN-META.json                   Roles, versions, argv, cwd, hashes, timing, status
+WORKSPACE-DIFF-WARNING.txt       Content changes or Git status changes, if observed
+```
+
+A nonzero child exit, empty/missing/invalid UTF-8 answer or oversized result fails the round.
+R1 failures stop the run before R2. No transcript truncation is applied to satisfy budgets.
+The runner supports per-process and whole-run deadlines; timeout, cancellation and normal
+completion clean up managed children. POSIX uses a separate process group; Windows uses a
+kill-on-close Job Object assigned before the child runs. POSIX adapters must keep descendants
+in that group (no daemonizing/setsid); a process group does not contain deliberately detached
+processes. Use an external OS sandbox/service supervisor for adapters with detached workers.
+
+Exit codes: **0** transcripts complete; **2** configuration/preflight error; **3** failed round or
+deadline; **4** workspace changed/audit failed; **130** user cancellation.
+
+The content audit hashes regular files, including dirty and ignored files, in every reviewed cwd.
+It excludes Git internals and the run directory and records symlinks without following their targets.
+Changes that are made and reverted between snapshots, external writes and CLI runtime storage
+are outside this audit. Restrict tools/sandboxing before dispatch; hashes are post-run observations.
+
+Budget settings (config; the first three also have CLI overrides):
+
+| Setting | Default | Purpose |
+|---|---:|---|
+| `timeout_sec` / `--timeout` | 900 | Per child process, seconds |
+| `total_timeout_sec` / `--total-timeout` | 1800 | Whole invocation, seconds |
+| `max_prompt_chars` / `--max-prompt-chars` | 120000 | Full input per round/role |
+| `max_output_bytes` | 2000000 | Maximum accepted answer file size |
+| `max_audit_files` | 50000 | Maximum files hashed per cwd |
+| `max_audit_bytes` | 536870912 | Maximum content bytes hashed per cwd |
+
+The whole-run deadline also covers capability probes and initial auditing. File auditing checks
+the deadline between entries/chunks; an OS-level blocked filesystem operation may finish later.
+After failure or cancellation, final verification gets at most five additional seconds. A successful
+run's final audit stays within the whole-run budget; incomplete verification is recorded as an error.
+
+Choose a focused repository/directory or explicitly adjust audit limits for large projects.
+The output character request controls presentation; it does not cap model thinking or API billing.
+Use vendor budget controls where available.
+
+## Verification
+
+```sh
+python3 tests/validate_skill.py
+python3 -m unittest discover -s tests -v
+```
+
+GitHub Actions defines Windows, macOS and Ubuntu jobs on Python 3.10 and 3.13. Synthetic CLI
+tests exercise actual subprocesses without paid model calls. A matrix definition is distinct
+from a completed CI run; consult its results for the platform/version you intend to deploy.

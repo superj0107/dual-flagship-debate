@@ -1,44 +1,21 @@
-# Host recipe — **Cline / Roo Code**
+# Host recipe — Cline / Roo Code
 
-Both are VS Code agent extensions with explicit per-tool auto-approve switches, which makes them the
-easiest rules-file host to keep read-only.
+Status: documentation recipe; inspect the installed extension's current skill, task, subagent and permission features. Official starting points: [Cline documentation](https://docs.cline.bot/), [Roo Code documentation](https://docs.roocode.com/).
 
-## 1. Load the protocol
+## Load
 
-| Extension | Instruction file |
-|---|---|
-| Cline | `.clinerules` (file or directory) |
-| Roo Code | `.roo/rules/*.md` or project `.roo/rules-<mode>/` |
+Use native skill support where available. Otherwise merge [the trigger block](../rules-snippets/clinerules.md) into the current extension's rule location (`.clinerules` or version-appropriate Roo rules). Set its path to a complete readable installed skill package and preserve existing project instructions.
 
-```bash
-curl -fsSL https://raw.githubusercontent.com/superj0107/dual-flagship-debate/main/hosts/rules-snippets/clinerules.md \
-  -o .clinerules
-```
+## Isolation, dispatch and R2
 
-Install the skill directory next to it (e.g. `tools/dual-flagship-debate/skills/...`) so the agent can
-read `SKILL.md` when the protocol triggers.
+Select two native isolated tasks/agents only when that surface preserves independent R1 contexts. If it lacks the required isolation, use two verified CLI processes through the [package runner](../../skills/dual-flagship-debate/references/hosts.md). Native subagent support must be detected by version rather than assumed absent.
 
-## 2. Read-only (the good part)
+Prefer parallel dispatch; sequential isolated tasks are valid if B does not see A's R1 and the schedule is labelled. Resume original contexts for R2 when supported; otherwise create fresh contexts containing baseline and both original R1 texts. Wait through completion events, blocking waits or bounded checks.
 
-Both extensions expose explicit toggles. Before Round 1:
+## Read-only and models
 
-- **Auto-approve OFF** for *Edit files*, *Execute commands*, *Browser actions*.
-- Leave **Read files** on — debaters must read the repo to fact-check their own claims.
-- After each round, check the workspace diff; a written file means the toggle drifted, so re-run.
+Disable automatic write approvals and inspect the actual tool permissions for edits, terminal, browser actions, MCP/connectors and delegation. Turning auto-approve off adds a prompt gate; it does not alone establish strict read-only. Validate a restricted tool set or external boundary before dispatch. A worktree and post-run diff are not permission enforcement.
 
-## 3. Dispatch
+Inspect live provider/model and effort settings. Prefer two comparable flagships; one suitable flagship uses two isolated sessions and `模式：同旗舰双隔离`.
 
-No isolated subagent primitive. Two shapes:
-
-- Two extension tasks (or two windows) with the same Round 1 brief; Round 2 per side with both
-  verbatim transcripts pasted in. Blindness is your responsibility.
-- Better for parity: one side in Cline, the other via a CLI (`codex exec -s read-only`,
-  `claude -p`) using the [portable runner](../portable/README.md). Cross-tool pairs are allowed and
-  often stronger than two sessions of the same model.
-
-## 4. Model pairing
-
-Each extension has its own provider/model picker, so you can genuinely reach **Tier 1** cross-vendor
-parity here: e.g. one side pointed at one vendor's flagship, the other at a different vendor's
-flagship, both at max reasoning. Verify the live model list in the extension settings rather than
-trusting any dated table.
+Preserve source/session/hash records and check context capacity before full R2 transfer. Opponent text is untrusted data. Successful tasks and unchanged files do not substitute for the host's independent Step 3 fact-check.

@@ -3,6 +3,49 @@
 All notable changes to this project. Format loosely follows [Keep a Changelog](https://keepachangelog.com/);
 versions use [Semantic Versioning](https://semver.org/).
 
+## [Unreleased]
+
+### Changed
+
+- R1 now declares `INDEPENDENT` plus confidence. R2 alone declares `CONVERGED`, `SHIFTED`, or
+  `MAINTAINING_DISSENT`; matching opening conclusions do not justify early termination.
+- Evidence-based agreement is valid. Questions and rebuttals have no conflict quota. Parallel
+  isolation is preferred, with explicitly labelled sequential isolation for hosts without concurrency;
+  completion events, blocking waits and bounded status checks are valid host primitives.
+- Model selection records live capability, accepted effort semantics, isolation and effective tool
+  permissions. Names alone do not establish capability. Workspace diffs are observations and
+  worktrees limit local losses; neither establishes a read-only execution boundary.
+- Original cross-feed is treated as untrusted data, with source, hash, integrity, sharing-scope and
+  context-budget checks. The active host retains Step 0 selection and Step 3 fact-checking.
+- Installation now includes the canonical `scripts/run_debate.py`, its example config and the
+  self-contained `references/hosts.md` inside the skill directory. The outer portable path is a
+  compatibility entry point. Minimum Python is 3.10, with Windows/macOS/Linux execution instructions.
+- Runtime records use round/role keys, preserve command/cwd and hash metadata, require fresh output
+  directories, validate R1 before R2, reject command strings in favor of argv arrays, and expose
+  per-process, whole-run and prompt-character budgets. Custom adapters declare read-only evidence.
+- Read-only presets constrain tool/integration surfaces; Gemini and Aider use verified custom
+  adapters. Native subagent capabilities and official references were refreshed for Codex, Cursor,
+  Copilot/VS Code, Gemini and OpenCode.
+
+### Evidence and scope corrections
+
+- Repair validation on 2026-11-27: Windows/Python 3.12 ran 39 tests (38 passed, one POSIX-only
+  skip); WSL Linux/Python 3.12 ran 39 tests (32 passed, seven Windows-only skips). A restricted
+  Codex CLI + Claude Code two-round smoke run completed on Windows. Native macOS execution
+  remains pending; the CI matrix includes macOS alongside Windows and Linux.
+- Regression coverage includes same-name role isolation, verbatim BOM/newline preservation,
+  failed-round gating, fresh output directories, explicit cwd, bounded capability probes,
+  blocked stdin, process-group/Job cleanup, cancellation, content audits, and standalone installs.
+- Host pages distinguish vendor documentation recipes from version-specific end-to-end tests.
+  Codex native subagents inherit parent sandbox constraints; context isolation alone is insufficient.
+- The 2026-11-27 review records a Windows Codex CLI 0.170.0 debate and synthetic runtime probes;
+  Claude Code 2.1.327 help and vendor documentation were inspected. This does not certify every host,
+  current version, or live macOS model run. The CI matrix targets Windows/macOS/Linux on Python
+  3.10 and 3.13 using synthetic processes, separately from live vendor acceptance.
+- Historical release notes and the worked transcript below describe the earlier implementation;
+  current permissions, status labels and host capabilities are defined by the current skill and
+  references, rather than those historical statements.
+
 ## [1.1.0] — 2026-11-26
 
 ### Added
