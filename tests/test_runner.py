@@ -263,7 +263,7 @@ class RunnerTests(unittest.TestCase):
         result = self.run_cli(a=a, b=self.spec(name='B'), rounds=1)
         self.assertEqual(result.returncode, 0, result.stderr + (self.outdir / 'r1-A.log.txt').read_text(encoding='utf-8', errors='replace'))
         answer = json.loads((self.outdir / 'r1-A.out.md').read_text(encoding='utf-8'))
-        self.assertEqual(Path(answer['cwd']), self.workdir)
+        self.assertTrue(os.path.samefile(answer['cwd'], self.workdir))
 
     def test_codex_preflight_confirms_effective_mcp_restrictions(self):
         def probe(argv, cwd, **kwargs):

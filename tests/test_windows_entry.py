@@ -132,7 +132,7 @@ class WindowsEntryTests(unittest.TestCase):
         self.assertEqual(options["--rounds"], "1")
         self.assertEqual(options["--timeout"], "37")
         self.assertEqual(options["--total-timeout"], "81")
-        self.assertEqual(Path(record["cwd"]), self.caller)
+        self.assertTrue(os.path.samefile(record["cwd"], self.caller))
         self.assertEqual(record["config"]["debaters"], {
             "A": {"preset": "codex-cli", "name": "Codex A", "model": codex_model, "effort": "high"},
             "B": {"preset": "claude-code", "name": "Claude B", "model": claude_model, "effort": "medium"},
@@ -193,7 +193,7 @@ class WindowsEntryTests(unittest.TestCase):
         result = self.run_entry(engine_exit=7)
         self.assertEqual(result.returncode, 7, result.stderr.decode(errors="replace"))
         record = self.read_capture(result)
-        self.assertEqual(Path(record["argv"][record["argv"].index("--workdir") + 1]), self.workdir)
+        self.assertTrue(os.path.samefile(record["argv"][record["argv"].index("--workdir") + 1], self.workdir))
         self.assert_temp_cleaned(record)
 
 
