@@ -88,6 +88,8 @@ REQUIRED_FILES = [
     "skills/dual-flagship-debate/scripts/run_debate.py",
     "skills/dual-flagship-debate/scripts/process_tree.py",
     "skills/dual-flagship-debate/scripts/debate.config.example.json",
+    "tools/verify_install.py",
+    "tests/test_verify_install.py",
     ".github/workflows/validate.yml",
 ]
 

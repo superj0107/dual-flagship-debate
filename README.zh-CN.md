@@ -102,6 +102,18 @@ python3 tests/validate_skill.py
 python3 -m unittest discover -s tests
 ```
 
+### 校验"装的是不是发布的"
+
+仓库测试完全不反映宿主实际加载到的东西，要单独查：
+
+```bash
+python3 tools/verify_install.py                  # 三份安装副本彼此是否一致
+python3 tools/verify_install.py --tag v2.0.0     # 是否等于某个发布 tag
+```
+
+它逐个技能根打印链接类型与解析后的目标，并在这些情况失败：副本不可读（junction 目标被删后**看起来仍然存在**）、
+必需文件缺失、副本之间不一致、装的内容不是 tag 里发布的那份。散列前会归一化行尾，所以 CRLF 检出不会被误判成漂移。
+
 CI 目标矩阵为 Windows、macOS、Linux 与 Python 3.10／3.13。2026-11-27 本地修复验证共 39 项：
 Windows／Python 3.12 通过 38 项、跳过 1 项系统专用用例；WSL Linux／Python 3.12 通过 32 项、
 跳过 7 项 Windows 专用用例。收紧权限后的 Codex＋Claude 两轮 CLI 冒烟验证已在 Windows 完成。

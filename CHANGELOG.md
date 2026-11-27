@@ -3,9 +3,28 @@
 All notable changes to this project. Format loosely follows [Keep a Changelog](https://keepachangelog.com/);
 versions use [Semantic Versioning](https://semver.org/).
 
-## [Unreleased]
+## [2.0.0] — 2026-11-27
 
-### Changed
+### Breaking
+
+- **R1 vocabulary**: debaters now open with `INDEPENDENT` plus confidence; `CONVERGED` /
+  `SHIFTED` / `MAINTAINING_DISSENT` are Round 2 only. Transcripts produced against the 1.x text do
+  not satisfy the contract. Matching opening conclusions no longer justify stopping after Round 1.
+- **Runner config**: a custom `cmd` now requires a `read_only` declaration
+  (`external-sandbox` or `tool-allowlist`) with verification evidence; the `gemini-cli` and
+  `aider` presets were removed in favour of verified custom adapters.
+- **Runner location**: the canonical runner lives inside the skill directory
+  (`skills/dual-flagship-debate/scripts/run_debate.py`); `hosts/portable/run_debate.py` is a
+  compatibility shim.
+
+### Added
+
+- `tools/verify_install.py`: verifies that every installed copy is readable (catches broken
+  junctions, which still report as existing on Windows), complete (including `scripts/`),
+  self-consistent, and — with `--tag` — byte-identical to a released tag. Line endings are
+  normalised before hashing, so a CRLF checkout is not mistaken for drift.
+- `tests/test_verify_install.py`: eight cases covering consistency, missing files, divergent
+  copies, frontmatter/directory mismatch, unreleased content against a tag, and unresolvable tags.### Changed
 
 - R1 now declares `INDEPENDENT` plus confidence. R2 alone declares `CONVERGED`, `SHIFTED`, or
   `MAINTAINING_DISSENT`; matching opening conclusions do not justify early termination.

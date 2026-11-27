@@ -102,6 +102,20 @@ python3 tests/validate_skill.py
 python3 -m unittest discover -s tests
 ```
 
+### Verify an installation
+
+Repository tests say nothing about what your agents actually load. Check that separately:
+
+```bash
+python3 tools/verify_install.py                  # all installed copies agree with each other
+python3 tools/verify_install.py --tag v2.0.0     # ...and match a released tag
+```
+
+It reports each skill root with the link kind and resolved target, and fails when a copy is
+unreadable (a junction whose target was deleted still *looks* present), when required files are
+missing, when copies diverge, or when the installed content is not what the tag ships. Line endings
+are normalised before hashing, so a CRLF checkout is not mistaken for drift.
+
 The CI matrix targets Windows, macOS and Linux with Python 3.10 and 3.13. On 2026-11-27,
 the repair was verified locally with 39 tests on Windows/Python 3.12 (38 passed, one OS-specific
 skip), and Linux under WSL/Python 3.12 (32 passed, seven Windows-only skips). A restricted
@@ -115,6 +129,7 @@ skills/dual-flagship-debate/references/   model, integrity and host references
 skills/dual-flagship-debate/scripts/      canonical runner and config example
 hosts/                                  optional recipes and compatibility entry points
 examples/topic-template.md               Step 0 evidence and capability template
+tools/verify_install.py                  installed-copy checker (link target, files, tag match)
 tests/                                  structure and runtime checks
 ```
 
